@@ -40,7 +40,13 @@ import os.path
 import time
 import warnings
 
-import functools
+try:
+  import functools
+except ImportError, e:
+  class functools(object):
+    def wraps(f, *args, **kw):
+      return f
+
 import pytz
 
 
@@ -387,7 +393,7 @@ def _wrap_method(name):
   method = getattr(datetime.datetime, name)
 
   # Have to give the second argument as method has no __module__ option.
-  @functools.wraps(method, ("__name__", "__doc__"))
+  @functools.wraps(method, ("__name__", "__doc__"), ())
   def wrapper(*args, **kw):
     r = method(*args, **kw)
 

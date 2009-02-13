@@ -199,11 +199,15 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assert_(isinstance(drsub, datetime_tz.datetime_tz))
     self.assert_(isinstance(dreplace, datetime_tz.datetime_tz))
 
-    # Make sure the wrapped functions still look like the original functions
-    self.assertEqual(dreplace.replace.__name__,
-                     datetime.datetime.replace.__name__)
-    self.assertEqual(dreplace.replace.__doc__,
-                     datetime.datetime.replace.__doc__)
+    try:
+      import functools
+      # Make sure the wrapped functions still look like the original functions
+      self.assertEqual(dreplace.replace.__name__,
+                       datetime.datetime.replace.__name__)
+      self.assertEqual(dreplace.replace.__doc__,
+                       datetime.datetime.replace.__doc__)
+    except ImportError:
+      pass
 
     try:
       dreplace = datetime_tz.datetime_tz.now()
