@@ -171,7 +171,7 @@ def _detect_timezone_etc_localtime():
   matches = []
   if os.path.exists("/etc/localtime"):
     localtime = pytz.tzfile.build_tzinfo("/etc/localtime",
-                                         open("/etc/localtime"))
+                                         file("/etc/localtime"))
 
     # See if we can find a "Human Name" for this..
     for tzname in pytz.all_timezones:

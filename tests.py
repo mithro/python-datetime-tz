@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.4
 #
 # Copyright 2009 Google Inc.
 #
@@ -30,6 +30,8 @@ import os
 import StringIO
 import unittest
 import warnings
+
+import google3
 
 import datetime_tz
 import pytz
@@ -120,7 +122,9 @@ class TestLocalTimezoneDetection(unittest.TestCase):
 
     def localtime_valid_fake(filename, file=file):
       if filename == "/etc/localtime":
-        return file("test_localtime_sydney")
+        filename = os.path.join(os.path.dirname(__file__),
+                                "test_localtime_sydney")
+        return file(filename)
       return file(filename)
     self.mocked("__builtins__.file", localtime_valid_fake)
 
