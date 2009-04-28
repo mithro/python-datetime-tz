@@ -37,6 +37,7 @@ import calendar
 import datetime
 import os
 import os.path
+import re
 import time
 import warnings
 
@@ -48,7 +49,7 @@ except ImportError, e:
       return f
 
 import pytz
-
+import dateutil.parser
 
 # Need to patch pytz.utc to have a _utcoffset so you can normalize/localize
 # using it.
@@ -340,6 +341,84 @@ class datetime_tz(datetime.datetime):
     return datetime_tz(d)
 
   astimezone = normalize
+
+  @classmethod
+  def smartparse(cls, toparse, tzinfo=None):
+    """Method which uses dateutil.parse and extras to try and parse the string.
+
+    Valid dates are found at:
+     http://labix.org/python-dateutil#head-1443e0f14ad5dff07efd465e080d1110920673d8-2
+
+    Other valid formats include:
+      "now" or "today"
+      "yesterday"
+      "tommorrow"
+      "5 minutes ago"
+      "10 hours ago"
+    (does not yet support "5 months ago yet")
+
+    """
+    toparse = toparse.strip()
+
+    if tzinfo is None:
+      dt = cls.now()
+    else:
+      dt = cls.now(tzinfo)
+
+    if toparse in ["now", "today"]:
+      pass
+
+    elif toparse == "yesterday":
+      dt -= datetime.timedelta(days=1)
+
+    elif toparse == "tommorrow":
+      dt += datetime.timedelta(days=1)
+
+    elif "ago" in toparse:
+      # Remove the "ago" bit
+      toparse = toparse[:-3]
+
+      # Match the following
+      # an hour ago
+      # 1h ago
+      # 1 h ago
+      # 1 hour ago
+      # 2 hours ago
+      # Same with minutes, seconds, etc.
+
+      # FIXME: We should add support for 5 months, 1 year, etc but timedelta
+      # does not support them.
+      tocheck = (("d", "days"), ("h", "hours"), ("m", "minutes"),
+                 ("s", "seconds"))
+      result = []
+      for i, (abbr, full) in enumerate(tocheck):
+        regex = "([0-9]+|(a)|(an))( )*([%s]((%s)?s?))( )*" % (abbr, full[1:-1])
+        print regex
+
+        matches = re.search(regex, toparse)
+        if matches is None:
+          result.append(0)
+        else:
+          group = matches.groups()
+
+          if group[0] in ("a", "an"):
+            result.append(1)
+          else:
+            result.append(int(group[0]))
+
+      delta = datetime.timedelta(**dict(zip(zip(*tocheck)[1], result)))
+      dt -= delta
+    else:
+
+      dt = dateutil.parser.parse(toparse)
+      if dt is None:
+        raise ValueError('Was not able to parse date!')
+      if not thetz is None:
+        args = list(dt.timetuple()[0:6])+[0, thetz]
+        dt = datetime.datetime(*args)
+
+    return dt
+
 
   @classmethod
   def utcfromtimestamp(cls, timestamp):

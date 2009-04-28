@@ -266,5 +266,72 @@ class TestDatetimeTZ(unittest.TestCase):
     except SyntaxError:
       pass
 
+  def testSmartParse(self):
+    tz = pytz.timezone("Australia/Sydney")
+    now = datetime_tz.datetime_tz.now(tz)
+
+    mocked = MockMe()
+    @staticmethod
+    def now_fake(tzinfo):
+      if tz is tzinfo:
+        return now
+      else:
+        assert False
+    mocked("datetime_tz.datetime_tz.now", now_fake)
+
+    d = datetime_tz.datetime_tz.smartparse("now", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now)
+
+    d = datetime_tz.datetime_tz.smartparse("today", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now)
+
+    d = datetime_tz.datetime_tz.smartparse("yesterday", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(days=1))
+
+    d = datetime_tz.datetime_tz.smartparse("tommorrow", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now+datetime.timedelta(days=1))
+
+    d = datetime_tz.datetime_tz.smartparse("a second ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(seconds=1))
+
+    d = datetime_tz.datetime_tz.smartparse("1 second ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(seconds=1))
+
+    d = datetime_tz.datetime_tz.smartparse("2 seconds ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(seconds=2))
+
+    d = datetime_tz.datetime_tz.smartparse("1 minute ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(minutes=1))
+
+    d = datetime_tz.datetime_tz.smartparse("2 minutes ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(minutes=2))
+
+    d = datetime_tz.datetime_tz.smartparse("1 hour ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(hours=1))
+
+    d = datetime_tz.datetime_tz.smartparse("2 hours ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(hours=2))
+
+    d = datetime_tz.datetime_tz.smartparse("2 days ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(days=2))
+
+    mocked.tearDown()
+
+    toparse = datetime_tz.datetime_tz(2008, 10, 5)
+
+
+
 if __name__ == "__main__":
   unittest.main()
