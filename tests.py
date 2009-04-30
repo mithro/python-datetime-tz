@@ -277,6 +277,7 @@ class TestDatetimeTZ(unittest.TestCase):
   def testSmartParse(self):
     tz = pytz.timezone("Australia/Sydney")
     now = datetime_tz.datetime_tz.now(tz)
+    tommorrow = now+datetime.timedelta(days=1)
 
     mocked = MockMe()
     @staticmethod
@@ -301,7 +302,7 @@ class TestDatetimeTZ(unittest.TestCase):
 
     d = datetime_tz.datetime_tz.smartparse("tommorrow", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
-    self.assertEqual(d, now+datetime.timedelta(days=1))
+    self.assertEqual(d, tommorrow)
 
     d = datetime_tz.datetime_tz.smartparse("a second ago", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
@@ -351,25 +352,53 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=1, hours=2))
 
+    # FIXME: These below should actually test the equivalence
+    d = datetime_tz.datetime_tz.smartparse("start of today", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now.replace(hour=0, minute=0, second=0, microsecond=0))
+
+    d = datetime_tz.datetime_tz.smartparse("start of tommorrow", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d,
+        tommorrow.replace(hour=0, minute=0, second=0, microsecond=0))
+
+
+    d = datetime_tz.datetime_tz.smartparse("start of yesterday", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+
+    d = datetime_tz.datetime_tz.smartparse("end of today", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+
+    d = datetime_tz.datetime_tz.smartparse("end of tommorrow", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d,
+        tommorrow.replace(hour=23, minute=59, second=59, microsecond=999999))
+
+    d = datetime_tz.datetime_tz.smartparse("end of yesterday", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    # FIXME: These above should actually test the equivalence
+
     mocked.tearDown()
 
     toparse = datetime_tz.datetime_tz(2008, 10, 5)
+    print "toparse", repr(toparse)
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y/%m/%d"))
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
-    print repr(d), repr(toparse)
     self.assertEqual(d, toparse)
 
-    toparse = datetime_tz.datetime_tz(2008, 10, 5)
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y-%m-%d"))
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
-    print d, toparse
     self.assertEqual(d, toparse)
 
-    toparse = datetime_tz.datetime_tz(2008, 10, 5)
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y%m%d"))
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
-    print d, toparse
     self.assertEqual(d, toparse)
+
+    d = datetime_tz.datetime_tz.smartparse(
+        toparse.strftime("start of %d, %B %Y"))
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d,
+        toparse.replace(hour=0,minute=0,second=0,microsecond=0))
 
 if __name__ == "__main__":
   unittest.main()

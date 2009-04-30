@@ -357,15 +357,39 @@ class datetime_tz(datetime.datetime):
       "tommorrow"
       "5 minutes ago"
       "10 hours ago"
+      "start of yesterday"
+      "end of tommorrow"
+      "end of 3rd of March"
     (does not yet support "5 months ago yet")
 
     """
+    # Default for empty fields are:
+    #  year/month/day == now
+    #  hour/minute/second/microsecond == 0
     toparse = toparse.strip()
 
     if tzinfo is None:
       dt = cls.now()
     else:
       dt = cls.now(tzinfo)
+
+    default = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if toparse.startswith("end of "):
+      toparse = toparse.replace("end of ", "")
+
+      dt += datetime.timedelta(days=1)
+      dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+      dt -= datetime.timedelta(microseconds=1)
+
+      default = dt
+    if toparse.startswith("start of "):
+      toparse = toparse.replace("start of ", "")
+
+      dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+      default = dt
+
+    toparse = toparse.strip()
 
     if toparse in ["now", "today"]:
       pass
@@ -410,7 +434,7 @@ class datetime_tz(datetime.datetime):
       delta = datetime.timedelta(**dict(zip(tocheck, result)))
       dt -= delta
     else:
-      dt = dateutil.parser.parse(toparse)
+      dt = dateutil.parser.parse(toparse, default=default)
       if dt is None:
         raise ValueError('Was not able to parse date!')
 
