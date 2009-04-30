@@ -275,6 +275,8 @@ class datetime_tz(datetime.datetime):
 
       if "tzinfo" in kw:
         kw["tzinfo"] = _tzinfome(kw["tzinfo"])
+      else:
+        kw["tzinfo"] = localtz()
 
     obj = datetime.datetime.__new__(cls, *args, **kw)
 
@@ -388,34 +390,36 @@ class datetime_tz(datetime.datetime):
 
       # FIXME: We should add support for 5 months, 1 year, etc but timedelta
       # does not support them.
-      tocheck = (("d", "days"), ("h", "hours"), ("m", "minutes"),
-                 ("s", "seconds"))
+      tocheck = ("days", "hours", "minutes", "seconds")
       result = []
-      for i, (abbr, full) in enumerate(tocheck):
-        regex = "([0-9]+|(a)|(an))( )*([%s]((%s)?s?))( )*" % (abbr, full[1:-1])
-        print regex
+      for i, bit in enumerate(tocheck):
+        regex = "([0-9]+|(a)|(an))( )*([%s]((%s)?s?))( )*" % (
+            bit[0], bit[1:-1])
 
         matches = re.search(regex, toparse)
         if matches is None:
           result.append(0)
         else:
-          group = matches.groups()
+          amount = matches.group(1)
 
-          if group[0] in ("a", "an"):
+          if amount in ("a", "an"):
             result.append(1)
           else:
-            result.append(int(group[0]))
+            result.append(int(amount))
 
-      delta = datetime.timedelta(**dict(zip(zip(*tocheck)[1], result)))
+      delta = datetime.timedelta(**dict(zip(tocheck, result)))
       dt -= delta
     else:
-
       dt = dateutil.parser.parse(toparse)
       if dt is None:
         raise ValueError('Was not able to parse date!')
-      if not thetz is None:
-        args = list(dt.timetuple()[0:6])+[0, thetz]
-        dt = datetime.datetime(*args)
+
+      if not tzinfo is None:
+        args = list(dt.timetuple()[0:6])+[0, tzinfo]
+        dt = datetime_tz.datetime_tz(*args)
+      elif dt.tzinfo is None:
+        dt = cls(dt, tzinfo=None)
+        dt = datetime_tz.__localize(dt, localtz())
 
     return dt
 

@@ -151,13 +151,21 @@ class TestLocalTimezoneDetection(unittest.TestCase):
 class TestDatetimeTZ(unittest.TestCase):
 
   def testCreation(self):
+    # Create with the local timezone
+    datetime_tz.localtz_set(pytz.utc)
+    d0 = datetime_tz.datetime_tz(2008, 10, 1)
+    self.assert_(isinstance(d0, datetime_tz.datetime_tz))
+    self.assertEqual(d0.tzinfo, pytz.utc)
+
     # Creation with string timezone
     d1 = datetime_tz.datetime_tz(2008, 10, 1, tzinfo="UTC")
     self.assert_(isinstance(d1, datetime_tz.datetime_tz))
+    self.assertEqual(d1.tzinfo, pytz.utc)
 
     # Creation with tzinfo object
     d2 = datetime_tz.datetime_tz(2008, 10, 1, tzinfo=pytz.utc)
     self.assert_(isinstance(d2, datetime_tz.datetime_tz))
+    self.assertEqual(d1.tzinfo, pytz.utc)
 
     # Creation from a datetime_tz object
     d3 = datetime_tz.datetime_tz(d1)
@@ -327,11 +335,41 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=2))
 
+    d = datetime_tz.datetime_tz.smartparse("2 days 5 hours ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(days=2, hours=5))
+
+    d = datetime_tz.datetime_tz.smartparse("2 days and a hour ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(days=2, hours=1))
+
+    d = datetime_tz.datetime_tz.smartparse("1 day and a hour ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(days=1, hours=1))
+
+    d = datetime_tz.datetime_tz.smartparse("1d 2h ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(days=1, hours=2))
+
     mocked.tearDown()
 
     toparse = datetime_tz.datetime_tz(2008, 10, 5)
+    d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y/%m/%d"))
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    print repr(d), repr(toparse)
+    self.assertEqual(d, toparse)
 
+    toparse = datetime_tz.datetime_tz(2008, 10, 5)
+    d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y-%m-%d"))
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    print d, toparse
+    self.assertEqual(d, toparse)
 
+    toparse = datetime_tz.datetime_tz(2008, 10, 5)
+    d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y%m%d"))
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    print d, toparse
+    self.assertEqual(d, toparse)
 
 if __name__ == "__main__":
   unittest.main()
