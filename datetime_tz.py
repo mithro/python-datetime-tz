@@ -56,6 +56,9 @@ import dateutil.parser
 pytz.utc._utcoffset = datetime.timedelta()
 
 
+timedelta = datetime.timedelta
+
+
 def _tzinfome(tzinfo):
   """Gets a tzinfo object from a string.
 
@@ -270,10 +273,10 @@ class datetime_tz(datetime.datetime):
       args = list(newargs)
 
       # Try and find out if we where given a string instead of a tzinfo object.
-      if len(args) > 1 and isinstance(args[-1], basestring):
-        args[-1] = _tzinfome(args[-1])
-
-      if "tzinfo" in kw:
+      if len(args) > 7:
+        if isinstance(args[-1], basestring):
+          args[-1] = _tzinfome(args[-1])
+      elif "tzinfo" in kw:
         kw["tzinfo"] = _tzinfome(kw["tzinfo"])
       else:
         kw["tzinfo"] = localtz()
@@ -295,6 +298,14 @@ class datetime_tz(datetime.datetime):
     if not naive:
       args.append(self.tzinfo)
     return datetime.datetime(*args)
+
+  def asdate(self):
+    """Return this datetime_tz as a date object.
+
+    Returns:
+      This datetime_tz as a date object.
+    """
+    return datetime.date(this.year, this.month, this.day)
 
   def totimestamp(self):
     """Convert this datetime object back to a unix timestamp.
@@ -440,7 +451,7 @@ class datetime_tz(datetime.datetime):
 
       if not tzinfo is None:
         args = list(dt.timetuple()[0:6])+[0, tzinfo]
-        dt = datetime_tz.datetime_tz(*args)
+        dt = datetime_tz(*args)
       elif dt.tzinfo is None:
         dt = cls(dt, tzinfo=None)
         dt = datetime_tz.__localize(dt, localtz())
@@ -477,7 +488,7 @@ class datetime_tz(datetime.datetime):
     obj = cls(obj, tzinfo=None)
     obj = datetime_tz.__localize(obj, localtz())
     if not tzinfo is None:
-      obj.normalize(tzinfo)
+      obj = obj.normalize(tzinfo)
     return obj
 
   today = now
