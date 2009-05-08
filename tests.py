@@ -310,6 +310,17 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(d, now)
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
+	# test that it's not case sensitive
+    d = datetime_tz.datetime_tz.smartparse("ToDay", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now)
+    self.assertEqual(d.tzinfo.zone, tz.zone)
+
+    d = datetime_tz.datetime_tz.smartparse("NOW", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now)
+    self.assertEqual(d.tzinfo.zone, tz.zone)
+
     d = datetime_tz.datetime_tz.smartparse("yesterday", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=1))
@@ -368,6 +379,11 @@ class TestDatetimeTZ(unittest.TestCase):
     d = datetime_tz.datetime_tz.smartparse("2 days and a hour ago", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=2, hours=1))
+    self.assertEqual(d.tzinfo.zone, tz.zone)
+
+    d = datetime_tz.datetime_tz.smartparse("4 daYs AND A SECond aGO", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(days=4, seconds=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("1 day and a hour ago", tz)
