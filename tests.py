@@ -31,8 +31,6 @@ import StringIO
 import unittest
 import warnings
 
-import google3
-
 import datetime_tz
 import pytz
 

@@ -371,13 +371,13 @@ class datetime_tz(datetime.datetime):
       "start of yesterday"
       "end of tommorrow"
       "end of 3rd of March"
-    (does not yet support "5 months ago yet")
+    (does not yet support "5 months ago" yet)
 
     """
     # Default for empty fields are:
     #  year/month/day == now
     #  hour/minute/second/microsecond == 0
-    toparse = toparse.strip()
+    toparse = toparse.strip().lower()
 
     if tzinfo is None:
       dt = cls.now()
