@@ -305,7 +305,7 @@ class datetime_tz(datetime.datetime):
     Returns:
       This datetime_tz as a date object.
     """
-    return datetime.date(this.year, this.month, this.day)
+    return datetime.date(self.year, self.month, self.day)
 
   def totimestamp(self):
     """Convert this datetime object back to a unix timestamp.

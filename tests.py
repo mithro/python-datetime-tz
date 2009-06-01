@@ -261,6 +261,19 @@ class TestDatetimeTZ(unittest.TestCase):
 
     self.assert_(isinstance(d, datetime.date))
 
+  def testConvert(self):
+    d = datetime_tz.datetime_tz(2009, 5, 1, 16, 12, 10)
+
+    d_datetime = d.asdatetime()
+    self.assert_(isinstance(d_datetime, datetime.datetime))
+    self.assert_(not isinstance(d_datetime, datetime_tz.datetime_tz))
+    self.assertEqual(d_datetime, datetime.datetime(2009, 5, 1, 16, 12, 10))
+
+    d_date = d.asdate()
+    self.assert_(isinstance(d_date, datetime.date))
+    self.assert_(not isinstance(d_date, datetime.datetime))
+    self.assertEqual(d_date, datetime.date(2009, 5, 1))
+
   def testNow(self):
     datetime_tz.localtz_set("US/Pacific")
 
