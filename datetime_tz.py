@@ -499,6 +499,109 @@ class datetime_tz(datetime.datetime):
                       "from an ordinal. Please use datetime.date.fromordinal")
 
 
+class iterate(object):
+  """Helpful iterators for working with datetime_tz objects."""
+
+  @staticmethod
+  def between(start, delta, end=None):
+    """Return an iterator between this date till given end point.
+
+    Example usage:
+      >>> d = datetime_tz.smartparse("5 days ago")
+      2008/05/12 11:45
+      >>> for i in d.between(timedelta(days=1), datetime_tz.now()):
+      >>>    print i
+      2008/05/12 11:45
+      2008/05/13 11:45
+      2008/05/14 11:45
+      2008/05/15 11:45
+      2008/05/16 11:45
+
+    Args:
+      start: The date to start at.
+      delta: The interval to iterate with.
+      end: (Optional) Date to end at. If not given the iterator will never
+           terminate.
+
+    Yields:
+      datetime_tz objects.
+    """
+    toyield = start
+    while end is None or toyield < end:
+      yield toyield
+      toyield += delta
+
+  @staticmethod
+  def weeks(start, end=None):
+    """Iterate over the weeks between the given datetime_tzs.
+
+    Args:
+      start: datetime_tz to start from.
+      end: (Optional) Date to end at, if not given the iterator will never
+           terminate.
+
+    Returns:
+      An iterator which generates datetime_tz objects a week apart.
+    """
+    return iterate.between(start, datetime.timedelta(days=7), end)
+
+  @staticmethod
+  def days(start, end=None):
+    """Iterate over the days between the given datetime_tzs.
+
+    Args:
+      start: datetime_tz to start from.
+      end: (Optional) Date to end at, if not given the iterator will never
+           terminate.
+
+    Returns:
+      An iterator which generates datetime_tz objects a day apart.
+    """
+    return iterate.between(start, datetime.timedelta(days=1), end)
+
+  @staticmethod
+  def hours(start, end=None):
+    """Iterate over the hours between the given datetime_tzs.
+
+    Args:
+      start: datetime_tz to start from.
+      end: (Optional) Date to end at, if not given the iterator will never
+           terminate.
+
+    Returns:
+      An iterator which generates datetime_tz objects a hour apart.
+    """
+    return iterate.between(start, datetime.timedelta(hours=1), end)
+
+  @staticmethod
+  def minutes(start, end=None):
+    """Iterate over the minutes between the given datetime_tzs.
+
+    Args:
+      start: datetime_tz to start from.
+      end: (Optional) Date to end at, if not given the iterator will never
+           terminate.
+
+    Returns:
+      An iterator which generates datetime_tz objects a minute apart.
+    """
+    return iterate.between(start, datetime.timedelta(minutes=1), end)
+
+  @staticmethod
+  def seconds(start, end=None):
+    """Iterate over the seconds between the given datetime_tzs.
+
+    Args:
+      start: datetime_tz to start from.
+      end: (Optional) Date to end at, if not given the iterator will never
+           terminate.
+
+    Returns:
+      An iterator which generates datetime_tz objects a second apart.
+    """
+    return iterate.between(start, datetime.timedelta(minutes=1), end)
+
+
 def _wrap_method(name):
   """Wrap a method.
 

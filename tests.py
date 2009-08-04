@@ -290,8 +290,7 @@ class TestDatetimeTZ(unittest.TestCase):
 
   def testFromOrdinal(self):
     try:
-      d = datetime_tz.datetime_tz.fromordinal(1)
-      str(d)
+      datetime_tz.datetime_tz.fromordinal(1)
       self.assert_(False)
     except SyntaxError:
       pass
@@ -323,7 +322,7 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(d, now)
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
-	# test that it's not case sensitive
+    # test that it's not case sensitive
     d = datetime_tz.datetime_tz.smartparse("ToDay", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now)
@@ -483,6 +482,59 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(d.tzinfo.zone, tz.zone)
     self.assertEqual(d,
         toparse.replace(hour=0,minute=0,second=0,microsecond=0))
+
+
+class TestIterate(unittest.TestCase):
+  def testBetween(self):
+    iterate = datetime_tz.iterate
+
+    tz = pytz.utc
+    start = datetime_tz.datetime_tz.smartparse("2008/05/12 11:45", tz)
+    end = datetime_tz.datetime_tz.smartparse("2008/05/16 11:46", tz)
+
+    result = []
+    for dt in iterate.between(start, datetime_tz.timedelta(days=1), end):
+      result.append(dt.strftime("%Y/%m/%d %H:%M"))
+
+    self.assertEqual(result, ["2008/05/12 11:45", "2008/05/13 11:45",
+                              "2008/05/14 11:45", "2008/05/15 11:45",
+                              "2008/05/16 11:45"])
+
+    start = datetime_tz.datetime_tz.smartparse("2008/05/12 11:45", tz)
+    end = datetime_tz.datetime_tz.smartparse("2008/05/16 11:45", tz)
+
+    result = []
+    for dt in iterate.between(start, datetime_tz.timedelta(days=1), end):
+      result.append(dt.strftime("%Y/%m/%d %H:%M"))
+
+    self.assertEqual(result, ["2008/05/12 11:45", "2008/05/13 11:45",
+                              "2008/05/14 11:45", "2008/05/15 11:45"])
+
+  def testDays(self):
+    iterate = datetime_tz.iterate
+
+    tz = pytz.utc
+    start = datetime_tz.datetime_tz.smartparse("2008/05/12 11:45", tz)
+    end = datetime_tz.datetime_tz.smartparse("2008/05/16 11:46", tz)
+
+    result = []
+    for dt in iterate.days(start, end):
+      result.append(dt.strftime("%Y/%m/%d %H:%M"))
+
+    self.assertEqual(result, ["2008/05/12 11:45", "2008/05/13 11:45",
+                              "2008/05/14 11:45", "2008/05/15 11:45",
+                              "2008/05/16 11:45"])
+
+    start = datetime_tz.datetime_tz.smartparse("2008/05/12 11:45", tz)
+    end = datetime_tz.datetime_tz.smartparse("2008/05/16 11:45", tz)
+
+    result = []
+    for dt in iterate.days(start, end):
+      result.append(dt.strftime("%Y/%m/%d %H:%M"))
+
+    self.assertEqual(result, ["2008/05/12 11:45", "2008/05/13 11:45",
+                              "2008/05/14 11:45", "2008/05/15 11:45"])
+
 
 if __name__ == "__main__":
   unittest.main()
