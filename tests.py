@@ -25,6 +25,7 @@
 
 __author__ = "tansell@google.com (Tim Ansell)"
 
+import __builtin__
 import datetime
 import os
 import StringIO
@@ -51,6 +52,7 @@ class MockMe(object):
   def tearDown(self):
     for tomock, tounmock in self.mocked.iteritems():
       exec("%s = tounmock" % tomock)
+
 
 
 class TestLocalTimezoneDetection(unittest.TestCase):
@@ -87,7 +89,7 @@ class TestLocalTimezoneDetection(unittest.TestCase):
         return StringIO.StringIO("Australia/Sydney")
       return file(filename)
 
-    self.mocked("__builtins__.file", timezone_valid_fake)
+    self.mocked("__builtin__.file", timezone_valid_fake)
     tzinfo = datetime_tz._detect_timezone_etc_timezone()
     self.assertEqual(pytz.timezone("Australia/Sydney").zone, tzinfo.zone)
 
@@ -97,7 +99,7 @@ class TestLocalTimezoneDetection(unittest.TestCase):
         return StringIO.StringIO("Invalid-Timezone")
       return file(filename)
 
-    self.mocked("__builtins__.file", timezone_invalid_fake)
+    self.mocked("__builtin__.file", timezone_invalid_fake)
     tzinfo = datetime_tz._detect_timezone_etc_timezone()
     self.assertEqual(None, tzinfo)
 
@@ -107,7 +109,7 @@ class TestLocalTimezoneDetection(unittest.TestCase):
         return StringIO.StringIO("\0\r\n\t\0\r\r\n\0")
       return file(filename)
 
-    self.mocked("__builtins__.file", timezone_binary_fake)
+    self.mocked("__builtin__.file", timezone_binary_fake)
     tzinfo = datetime_tz._detect_timezone_etc_timezone()
     self.assertEqual(None, tzinfo)
 
@@ -124,7 +126,7 @@ class TestLocalTimezoneDetection(unittest.TestCase):
                                 "test_localtime_sydney")
         return file(filename)
       return file(filename)
-    self.mocked("__builtins__.file", localtime_valid_fake)
+    self.mocked("__builtin__.file", localtime_valid_fake)
 
     # Test the single matches case
     self.mocked("pytz.all_timezones", [pytz.timezone("Australia/Sydney")])
