@@ -40,16 +40,23 @@ import os.path
 import re
 import time
 import warnings
+import dateutil.parser
+import pytz
+
 
 try:
+  # pylint: disable-msg=C6204
   import functools
 except ImportError, e:
+
   class functools(object):
+    """Fake replacement for a full functools."""
+
+    # pylint: disable-msg=W0613
+    @staticmethod
     def wraps(f, *args, **kw):
       return f
 
-import pytz
-import dateutil.parser
 
 # Need to patch pytz.utc to have a _utcoffset so you can normalize/localize
 # using it.
@@ -162,13 +169,13 @@ def _detect_timezone_etc_timezone():
       tz = file("/etc/timezone").read().strip()
       try:
         return pytz.timezone(tz)
-      except (IOError, pytz.UnknownTimeZoneError), e:
+      except (IOError, pytz.UnknownTimeZoneError), ei:
         warnings.warn("Your /etc/timezone file references a timezone (%r) that"
-                      " is not valid (%r)." % (tz, e))
+                      " is not valid (%r)." % (tz, ei))
 
     # Problem reading the /etc/timezone file
-    except IOError, e:
-      warnings.warn("Could not access your /etc/timezone file: %s" % e)
+    except IOError, eo:
+      warnings.warn("Could not access your /etc/timezone file: %s" % eo)
 
 
 def _detect_timezone_etc_localtime():
@@ -355,6 +362,7 @@ class datetime_tz(datetime.datetime):
 
   astimezone = normalize
 
+  # pylint: disable-msg=C6310
   @classmethod
   def smartparse(cls, toparse, tzinfo=None):
     """Method which uses dateutil.parse and extras to try and parse the string.
@@ -373,6 +381,16 @@ class datetime_tz(datetime.datetime):
       "end of 3rd of March"
     (does not yet support "5 months ago" yet)
 
+    Args:
+      toparse: The string to parse.
+      tzinfo: Timezone for the resultant datetime_tz object should be in.
+              (Defaults to your local timezone.)
+
+    Returns:
+      New datetime_tz object.
+
+    Raises:
+      ValueError: If unable to make sense of the input.
     """
     # Default for empty fields are:
     #  year/month/day == now
@@ -447,7 +465,7 @@ class datetime_tz(datetime.datetime):
     else:
       dt = dateutil.parser.parse(toparse, default=default)
       if dt is None:
-        raise ValueError('Was not able to parse date!')
+        raise ValueError("Was not able to parse date!")
 
       if not tzinfo is None:
         args = list(dt.timetuple()[0:6])+[0, tzinfo]
@@ -457,7 +475,6 @@ class datetime_tz(datetime.datetime):
         dt = datetime_tz.__localize(dt, localtz())
 
     return dt
-
 
   @classmethod
   def utcfromtimestamp(cls, timestamp):

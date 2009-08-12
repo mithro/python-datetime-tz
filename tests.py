@@ -54,7 +54,6 @@ class MockMe(object):
       exec("%s = tounmock" % tomock)
 
 
-
 class TestLocalTimezoneDetection(unittest.TestCase):
 
   def setUp(self):
@@ -212,7 +211,6 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assert_(isinstance(dreplace, datetime_tz.datetime_tz))
 
     try:
-      import functools
       # Make sure the wrapped functions still look like the original functions
       self.assertEqual(dreplace.replace.__name__,
                        datetime.datetime.replace.__name__)
@@ -288,7 +286,6 @@ class TestDatetimeTZ(unittest.TestCase):
     d = datetime_tz.datetime_tz.now(tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
-
 
   def testFromOrdinal(self):
     try:
@@ -418,8 +415,8 @@ class TestDatetimeTZ(unittest.TestCase):
 
     d = datetime_tz.datetime_tz.smartparse("start of tommorrow", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
-    self.assertEqual(d,
-        tommorrow.replace(hour=0, minute=0, second=0, microsecond=0))
+    self.assertEqual(
+        d, tommorrow.replace(hour=0, minute=0, second=0, microsecond=0))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("start of yesterday", tz)
@@ -432,8 +429,9 @@ class TestDatetimeTZ(unittest.TestCase):
 
     d = datetime_tz.datetime_tz.smartparse("end of tommorrow", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
-    self.assertEqual(d,
-        tommorrow.replace(hour=23, minute=59, second=59, microsecond=999999))
+    self.assertEqual(
+        d, tommorrow.replace(
+            hour=23, minute=59, second=59, microsecond=999999))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("end of yesterday", tz)
@@ -459,8 +457,8 @@ class TestDatetimeTZ(unittest.TestCase):
     d = datetime_tz.datetime_tz.smartparse(
         toparse.strftime("start of %d, %B %Y"))
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
-    self.assertEqual(d,
-        toparse.replace(hour=0,minute=0,second=0,microsecond=0))
+    self.assertEqual(
+        d, toparse.replace(hour=0, minute=0, second=0, microsecond=0))
 
     toparse = datetime_tz.datetime_tz(2008, 12, 5, tzinfo=tz)
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y/%m/%d"), tz)
@@ -482,8 +480,8 @@ class TestDatetimeTZ(unittest.TestCase):
         toparse.strftime("start of %d, %B %Y"), tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
-    self.assertEqual(d,
-        toparse.replace(hour=0,minute=0,second=0,microsecond=0))
+    self.assertEqual(
+        d, toparse.replace(hour=0, minute=0, second=0, microsecond=0))
 
 
 class TestIterate(unittest.TestCase):
