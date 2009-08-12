@@ -31,8 +31,8 @@ import os
 import StringIO
 import unittest
 import warnings
-
 import datetime_tz
+import dateutil
 import pytz
 
 
@@ -148,6 +148,12 @@ class TestLocalTimezoneDetection(unittest.TestCase):
 
 
 class TestDatetimeTZ(unittest.TestCase):
+
+  def setUp(self):
+    self.mocked = MockMe()
+
+  def tearDown(self):
+    self.mocked.tearDown()
 
   def testCreation(self):
     # Create with the local timezone
@@ -301,15 +307,13 @@ class TestDatetimeTZ(unittest.TestCase):
     now = datetime_tz.datetime_tz(2008, 12, 5, tzinfo=tz)
     tommorrow = now+datetime.timedelta(days=1)
 
-    mocked = MockMe()
-
     @staticmethod
     def now_fake(tzinfo):
       if tz is tzinfo:
         return now
       else:
         assert False
-    mocked("datetime_tz.datetime_tz.now", now_fake)
+    self.mocked("datetime_tz.datetime_tz.now", now_fake)
 
     d = datetime_tz.datetime_tz.smartparse("now", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
@@ -402,10 +406,52 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(d, now-datetime.timedelta(days=1, hours=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
+    d = datetime_tz.datetime_tz.smartparse("an hour and a day ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(days=1, hours=1))
+    self.assertEqual(d.tzinfo.zone, tz.zone)
+
     d = datetime_tz.datetime_tz.smartparse("1d 2h ago", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=1, hours=2))
     self.assertEqual(d.tzinfo.zone, tz.zone)
+
+    d = datetime_tz.datetime_tz.smartparse("2h5m32s ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-datetime.timedelta(hours=2, minutes=5, seconds=32))
+    self.assertEqual(d.tzinfo.zone, tz.zone)
+
+    d = datetime_tz.datetime_tz.smartparse("1y 2 month ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-dateutil.relativedelta.relativedelta(
+        years=1, months=2))
+    self.assertEqual(d.tzinfo.zone, tz.zone)
+
+    d = datetime_tz.datetime_tz.smartparse("2 months and 3m ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-dateutil.relativedelta.relativedelta(
+        months=2, minutes=3))
+    self.assertEqual(d.tzinfo.zone, tz.zone)
+
+    d = datetime_tz.datetime_tz.smartparse("3m4months1y ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-dateutil.relativedelta.relativedelta(
+        years=1, months=4, minutes=3))
+    self.assertEqual(d.tzinfo.zone, tz.zone)
+
+    d = datetime_tz.datetime_tz.smartparse("3m4months and 1y ago", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(d, now-dateutil.relativedelta.relativedelta(
+        years=1, months=4, minutes=3))
+    self.assertEqual(d.tzinfo.zone, tz.zone)
+
+    self.assertRaises(ValueError,
+                      datetime_tz.datetime_tz.smartparse,
+                      "5 billion years ago", tz)
+
+    self.assertRaises(ValueError,
+                      datetime_tz.datetime_tz.smartparse,
+                      "5 ago", tz)
 
     # FIXME: These below should actually test the equivalence
     d = datetime_tz.datetime_tz.smartparse("start of today", tz)
@@ -439,7 +485,7 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(d.tzinfo.zone, tz.zone)
     # FIXME: These above should actually test the equivalence
 
-    mocked.tearDown()
+    self.mocked.tearDown()
 
     toparse = datetime_tz.datetime_tz(2008, 12, 5)
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y/%m/%d"))

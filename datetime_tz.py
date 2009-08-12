@@ -41,6 +41,7 @@ import re
 import time
 import warnings
 import dateutil.parser
+import dateutil.relativedelta
 import pytz
 
 
@@ -376,10 +377,10 @@ class datetime_tz(datetime.datetime):
       "tommorrow"
       "5 minutes ago"
       "10 hours ago"
+      "10h5m ago"
       "start of yesterday"
       "end of tommorrow"
       "end of 3rd of March"
-    (does not yet support "5 months ago" yet)
 
     Args:
       toparse: The string to parse.
@@ -432,36 +433,40 @@ class datetime_tz(datetime.datetime):
     elif "ago" in toparse:
       # Remove the "ago" bit
       toparse = toparse[:-3]
+      # Replace all "a day and an hour" with "1 day 1 hour"
+      toparse = toparse.replace("a ", "1 ")
+      toparse = toparse.replace("an ", "1 ")
+      toparse = toparse.replace(" and ", " ")
 
       # Match the following
-      # an hour ago
+      # 1 hour ago
       # 1h ago
       # 1 h ago
       # 1 hour ago
       # 2 hours ago
       # Same with minutes, seconds, etc.
 
-      # FIXME: We should add support for 5 months, 1 year, etc but timedelta
-      # does not support them.
-      tocheck = ("days", "hours", "minutes", "seconds")
-      result = []
-      for i, bit in enumerate(tocheck):
-        regex = "([0-9]+|(a)|(an))( )*([%s]((%s)?s?))( )*" % (
-            bit[0], bit[1:-1])
+      tocheck = ("seconds", "minutes", "hours", "days", "months", "years")
 
-        matches = re.search(regex, toparse)
-        if matches is None:
-          result.append(0)
+      result = {}
+      for match in re.finditer("([0-9]+)([^0-9]*)", toparse):
+        amount = int(match.group(1))
+        unit = match.group(2).strip()
+
+        for bit in tocheck:
+          regex = "^([%s]|((%s)s?))$" % (
+              bit[0], bit[:-1])
+
+          bitmatch = re.search(regex, unit)
+          if bitmatch:
+            result[bit] = amount
+            break
         else:
-          amount = matches.group(1)
+          raise ValueError("Was not able to parse date unit %r!" % unit)
 
-          if amount in ("a", "an"):
-            result.append(1)
-          else:
-            result.append(int(amount))
-
-      delta = datetime.timedelta(**dict(zip(tocheck, result)))
+      delta = dateutil.relativedelta.relativedelta(**result)
       dt -= delta
+
     else:
       dt = dateutil.parser.parse(toparse, default=default)
       if dt is None:
