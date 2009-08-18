@@ -260,38 +260,52 @@ class datetime_tz(datetime.datetime):
     * Proper support for going to/from Unix timestamps (which are in UTC!).
   """
 
-  def __new__(cls, *newargs, **kw):
-    if len(newargs) >= 1 and isinstance(newargs[0], datetime.datetime):
-      args = list(newargs[0].timetuple()[0:6])+[newargs[0].microsecond]
+  def __new__(cls, *args, **kw):
+    args = list(args)
+    if not args:
+      raise TypeError("Not enough arguments given.")
 
-      if not newargs[0].tzinfo is None:
-        if "tzinfo" in kw:
-          raise TypeError("Can not give a timezone with timezone aware"
-                          " datetime object! (Use localize.)")
-        args.append(newargs[0].tzinfo)
-      else:
-        if isinstance(newargs[-1], (datetime.tzinfo, basestring)):
-          kw["tzinfo"] = _tzinfome(newargs[-1])
-        elif "tzinfo" in kw:
-          if kw["tzinfo"] is not None:
-            kw["tzinfo"] = _tzinfome(kw["tzinfo"])
-        else:
-          raise TypeError("Must give a timezone for naive datetime objects!")
+    # See if we are given a tzinfo object...
+    tzinfo = None
+    if isinstance(args[-1], (datetime.tzinfo, basestring)):
+      tzinfo = _tzinfome(args.pop(-1))
+    elif kw.get("tzinfo", None) is not None:
+      tzinfo = _tzinfome(kw.pop("tzinfo"))
+
+    # Create a datetime object if we don't have one
+    if isinstance(args[0], datetime.datetime):
+      # Convert the datetime instance to a datetime object.
+      newargs = (list(args[0].timetuple()[0:6]) +
+                 [args[0].microsecond, args[0].tzinfo])
+      dt = datetime.datetime(*newargs)
+
+      if tzinfo is None and dt.tzinfo is None:
+        raise TypeError("Must specify a timezone!")
+
+      if tzinfo is not None and dt.tzinfo is not None:
+        raise TypeError("Can not give a timezone with timezone aware"
+                        " datetime object! (Use localize.)")
     else:
-      args = list(newargs)
+      dt = datetime.datetime(*args, **kw)
 
-      # Try and find out if we where given a string instead of a tzinfo object.
-      if len(args) > 7:
-        if isinstance(args[-1], basestring):
-          args[-1] = _tzinfome(args[-1])
-      elif "tzinfo" in kw:
-        kw["tzinfo"] = _tzinfome(kw["tzinfo"])
-      else:
-        kw["tzinfo"] = localtz()
+    if dt.tzinfo is not None:
+      # Re-normalize the dt object
+      dt = dt.tzinfo.normalize(dt)
+    else:
+      if tzinfo is None:
+        tzinfo = localtz()
 
-    obj = datetime.datetime.__new__(cls, *args, **kw)
+      is_dst = None
+      if "is_dst" in kw:
+        is_dst = kw.pop("is_dst")
 
-    return obj
+      try:
+        dt = tzinfo.localize(dt, is_dst)
+      except IndexError:
+        raise pytz.AmbiguousTimeError("No such time exists!")
+
+    newargs = list(dt.timetuple()[0:6])+[dt.microsecond, dt.tzinfo]
+    return datetime.datetime.__new__(cls, *newargs)
 
   def asdatetime(self, naive=True):
     """Return this datetime_tz as a datetime object.
@@ -325,24 +339,6 @@ class datetime_tz(datetime.datetime):
     """
     return calendar.timegm(self.utctimetuple())+1e-6*self.microsecond
 
-  def __localize(self, tzinfo):
-    """Returns a version of this naive timestamp with the given timezone.
-
-    Args:
-      tzinfo: Either a datetime.tzinfo object or a string (which will be looked
-              up in pytz.
-
-    Returns:
-      A datetime_tz object in the given timezone.
-    """
-    # Assert we are a naive datetime object
-    assert self.tzinfo is None
-
-    tzinfo = _tzinfome(tzinfo)
-    d = tzinfo.localize(self.asdatetime(naive=True))
-
-    return datetime_tz(d)
-
   def normalize(self, tzinfo):
     """Returns a version of this timestamp converted to the given timezone.
 
@@ -362,6 +358,29 @@ class datetime_tz(datetime.datetime):
     return datetime_tz(d)
 
   astimezone = normalize
+
+  # pylint: disable-msg=C6113
+  def replace(self, **kw):
+    """Return datetime with new specified fields given as arguments.
+
+    For example, dt.replace(days=4) would return a new datetime_tz object with
+    exactly the same as dt but with the days attribute equal to 4.
+
+    Any attribute can be replaced, but tzinfo can not be set to None.
+
+    Args:
+      Any datetime_tz attribute.
+
+    Returns:
+      A datetime_tz object with the attributes replaced.
+
+    Raises:
+      TypeError: If the given replacement is invalid.
+    """
+    if "tzinfo" in kw:
+      if kw["tzinfo"] is None:
+        raise TypeError("Can not remove the timezone use asdatetime()")
+    return datetime_tz(datetime.datetime.replace(self, **kw))
 
   # pylint: disable-msg=C6310
   @classmethod
@@ -446,8 +465,8 @@ class datetime_tz(datetime.datetime):
       # 2 hours ago
       # Same with minutes, seconds, etc.
 
-      tocheck = ("seconds", "minutes", "hours", "days", "months", "years")
-
+      tocheck = ("seconds", "minutes", "hours", "days", "weeks", "months",
+                 "years")
       result = {}
       for match in re.finditer("([0-9]+)([^0-9]*)", toparse):
         amount = int(match.group(1))
@@ -468,23 +487,22 @@ class datetime_tz(datetime.datetime):
       dt -= delta
 
     else:
-      dt = dateutil.parser.parse(toparse, default=default)
+      dt = dateutil.parser.parse(toparse, default=default.asdatetime())
       if dt is None:
         raise ValueError("Was not able to parse date!")
 
-      if not tzinfo is None:
-        args = list(dt.timetuple()[0:6])+[0, tzinfo]
-        dt = datetime_tz(*args)
-      elif dt.tzinfo is None:
-        dt = cls(dt, tzinfo=None)
-        dt = datetime_tz.__localize(dt, localtz())
+      if dt.tzinfo is None:
+        if tzinfo is None:
+          tzinfo = localtz()
+        dt = cls(dt, tzinfo)
+      else:
+        dt = cls(dt, tzinfo)
 
     return dt
 
   @classmethod
   def utcfromtimestamp(cls, timestamp):
     """Returns a datetime object of a given timestamp (in UTC)."""
-
     obj = datetime.datetime.utcfromtimestamp(timestamp)
     obj = pytz.utc.localize(obj)
     return cls(obj)
@@ -499,19 +517,16 @@ class datetime_tz(datetime.datetime):
   def utcnow(cls):
     """Return a new datetime representing UTC day and time."""
     obj = datetime.datetime.utcnow()
-    obj = cls(obj, tzinfo=None)
-    obj = datetime_tz.__localize(obj, pytz.utc)
+    obj = cls(obj, tzinfo=pytz.utc)
     return obj
 
   @classmethod
   def now(cls, tzinfo=None):
     """[tz] -> new datetime with tz's local day and time."""
-    obj = datetime.datetime.now()
-    obj = cls(obj, tzinfo=None)
-    obj = datetime_tz.__localize(obj, localtz())
-    if not tzinfo is None:
-      obj = obj.normalize(tzinfo)
-    return obj
+    obj = cls.utcnow()
+    if tzinfo is None:
+      tzinfo = localtz()
+    return obj.normalize(tzinfo)
 
   today = now
 
@@ -646,8 +661,7 @@ def _wrap_method(name):
 
   setattr(datetime_tz, name, wrapper)
 
-for methodname in ["__add__", "__radd__", "__rsub__", "__sub__", "combine",
-                   "replace"]:
+for methodname in ["__add__", "__radd__", "__rsub__", "__sub__", "combine"]:
 
   # Make sure we have not already got an override for this method
   assert methodname not in datetime_tz.__dict__
