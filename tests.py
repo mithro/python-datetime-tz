@@ -158,6 +158,46 @@ class TestDatetimeTZ(unittest.TestCase):
   def tearDown(self):
     self.mocked.tearDown()
 
+  def testPeopleRants(self):
+    """This test contains various things which people rant about."""
+
+    # Tests some of the pitfuls discussed at
+    # http://www.enricozini.org/2009/debian/using-python-datetime/
+    ############################################################################
+
+    # That's right, the datetime object created by a call to datetime.datetime
+    # constructor now seems to think that Finland uses the ancient "Helsinki
+    # Mean Time" which was obsoleted in the 1920s.
+    #
+    # Well not anymore!
+    eurhel = pytz.timezone("Europe/Helsinki")
+    a = datetime_tz.datetime_tz(2008, 6, 23, 18, 2, 31, 101025, eurhel)
+    self.assertEqual(repr(a),
+                     "datetime_tz(2008, 6, 23, 18, 2, 31, 101025,"
+                     " tzinfo=<DstTzInfo 'Europe/Helsinki' EEST+3:00:00 DST>)")
+
+    # Timezone-aware datetime objects have other bugs: for example, they fail to
+    # compute Unix timestamps correctly. The following example shows two
+    # timezone-aware objects that represent the same instant but produce two
+    # different timestamps.
+    #
+    # Well not anymore!
+    utc = pytz.timezone('UTC')
+    a = datetime_tz.datetime_tz(2008, 7, 6, 5, 4, 3, tzinfo=utc)
+    self.assertEqual(str(a), '2008-07-06 05:04:03+00:00')
+    self.assertEqual(a.totimestamp(), 1215320643.0)
+    self.assertEqual(a.strftime("%s"), '1215284643')
+
+    italy = pytz.timezone('Europe/Rome')
+    b = a.astimezone(italy)
+    self.assertEqual(str(b), '2008-07-06 07:04:03+02:00')
+    self.assertEqual(b.totimestamp(), 1215320643.0)
+    self.assertNotEqual(b.strftime("%s"), '1215284643')
+
+    # TODO(tansell): We still discard timezone information in strptime...
+    # datetime.strptime silently throws away all timezone information. If you
+    # look very closely, it even says so in its documentation
+
   def testCreation(self):
     # Create with the local timezone
     datetime_tz.localtz_set(pytz.utc)
