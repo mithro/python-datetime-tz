@@ -339,7 +339,7 @@ class datetime_tz(datetime.datetime):
     """
     return calendar.timegm(self.utctimetuple())+1e-6*self.microsecond
 
-  def normalize(self, tzinfo):
+  def astimezone(self, tzinfo):
     """Returns a version of this timestamp converted to the given timezone.
 
     Args:
@@ -353,11 +353,9 @@ class datetime_tz(datetime.datetime):
     assert self.tzinfo is not None
 
     tzinfo = _tzinfome(tzinfo)
-    d = tzinfo.normalize(self.asdatetime(naive=False))
 
+    d = self.asdatetime(naive=False).astimezone(tzinfo)
     return datetime_tz(d)
-
-  astimezone = normalize
 
   # pylint: disable-msg=C6113
   def replace(self, **kw):
@@ -511,7 +509,7 @@ class datetime_tz(datetime.datetime):
   def fromtimestamp(cls, timestamp):
     """Returns a datetime object of a given timestamp (in local tz)."""
     d = cls.utcfromtimestamp(timestamp)
-    return d.normalize(localtz())
+    return d.astimezone(localtz())
 
   @classmethod
   def utcnow(cls):
@@ -526,7 +524,7 @@ class datetime_tz(datetime.datetime):
     obj = cls.utcnow()
     if tzinfo is None:
       tzinfo = localtz()
-    return obj.normalize(tzinfo)
+    return obj.astimezone(tzinfo)
 
   today = now
 

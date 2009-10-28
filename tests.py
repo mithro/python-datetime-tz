@@ -186,13 +186,14 @@ class TestDatetimeTZ(unittest.TestCase):
     a = datetime_tz.datetime_tz(2008, 7, 6, 5, 4, 3, tzinfo=utc)
     self.assertEqual(str(a), '2008-07-06 05:04:03+00:00')
     self.assertEqual(a.totimestamp(), 1215320643.0)
-    self.assertEqual(a.strftime("%s"), '1215284643')
+    # FIXME(tansell): %s is effected by the TZ environment value.
+    #self.assertEqual(a.strftime("%s"), '1215284643')
 
     italy = pytz.timezone('Europe/Rome')
     b = a.astimezone(italy)
     self.assertEqual(str(b), '2008-07-06 07:04:03+02:00')
     self.assertEqual(b.totimestamp(), 1215320643.0)
-    self.assertNotEqual(b.strftime("%s"), '1215284643')
+    #self.assertNotEqual(b.strftime("%s"), '1215284643')
 
     # TODO(tansell): We still discard timezone information in strptime...
     # datetime.strptime silently throws away all timezone information. If you
@@ -432,7 +433,7 @@ class TestDatetimeTZ(unittest.TestCase):
   def testUtcFromTimestamp(self):
     datetime_tz.localtz_set("US/Pacific")
 
-    for timestamp in 0, 1, 1233300000:
+    for timestamp in -100000000, -1, 0, 1, 1233300000:
       d = datetime_tz.datetime_tz.utcfromtimestamp(timestamp)
 
       self.assert_(isinstance(d, datetime_tz.datetime_tz))
@@ -442,11 +443,17 @@ class TestDatetimeTZ(unittest.TestCase):
   def testFromTimestamp(self):
     datetime_tz.localtz_set("US/Pacific")
 
-    for timestamp in 0, 1, 1233300000:
+    for timestamp in -100000000, -1, 0, 1, 1233300000:
       d = datetime_tz.datetime_tz.fromtimestamp(timestamp)
 
       self.assert_(isinstance(d, datetime_tz.datetime_tz))
       self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Pacific").zone)
+      self.assertEqual(d.totimestamp(), timestamp)
+
+      # Changing the timezone should have no effect on the timestamp produced.
+      d = d.astimezone('UTC')
+      self.assert_(isinstance(d, datetime_tz.datetime_tz))
+      self.assertEqual(d.tzinfo, pytz.utc)
       self.assertEqual(d.totimestamp(), timestamp)
 
   def testUtcNow(self):
