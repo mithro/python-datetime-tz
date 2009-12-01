@@ -689,6 +689,60 @@ class TestDatetimeTZ(unittest.TestCase):
 
     self.mocked.tearDown()
 
+    # Test datetime string with timezone information,
+    # also provide timezone argument
+    d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00-05:00", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
+    self.assertEqual(d.tzinfo, pytz.FixedOffset(-300))
+
+    d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00+0800", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2009-11-09 23:00:00+08:00")
+    self.assertEqual(d.tzinfo, pytz.FixedOffset(480))
+
+    d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
+    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+
+    d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST-05:00", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
+    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+
+    d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 EST 2009", tz)
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
+    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+
+    # Test datetime string with timezone information,
+    # no more timezone argument
+    d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00-05:00")
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
+    self.assertEqual(d.tzinfo, pytz.FixedOffset(-300))
+
+    d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00+0800")
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2009-11-09 23:00:00+08:00")
+    self.assertEqual(d.tzinfo, pytz.FixedOffset(480))
+
+    d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST")
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
+    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+
+    d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST-05:00")
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
+    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+
+    d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 EST 2009")
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
+    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+
     toparse = datetime_tz.datetime_tz(2008, 06, 5)
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y/%m/%d"))
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
