@@ -91,6 +91,17 @@ def _tzinfome(tzinfo):
 # Our "local" timezone
 _localtz = None
 
+def localize(dt):
+    """Localize a datetime to the local timezone
+
+    If dt is naive, returns the same datetime with the lcoal timezone
+    Else, uses astimezone to convert"""
+    if dt.tzinfo:
+        return dt.astimezone(localtz())
+    tz = localtz()
+    if hasattr(tz, "lcoalize"):
+        return tz.localize(dt)
+    return dt.replace(tzinfo=tz)
 
 def localtz():
   """Get the local timezone.
