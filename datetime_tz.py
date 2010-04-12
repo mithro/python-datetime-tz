@@ -117,6 +117,7 @@ def detect_timezone():
 
   We have a bunch of different methods for trying to figure this out (listed in
   order they are attempted).
+    * In windows, use win32timezone.TimeZoneInfo.local()
     * Try TZ environment variable.
     * Try and find /etc/timezone file (with timezone name).
     * Try and find /etc/localtime file (with timezone data).
@@ -128,6 +129,13 @@ def detect_timezone():
   Raises:
     pytz.UnknownTimeZoneError: If it was unable to detect a timezone.
   """
+  # Windows
+  try:
+      import win32timezone
+      return win32timezone.TimeZoneInfo.local()
+  except ImportError:
+      pass
+
   # First we try the TZ variable
   tz = _detect_timezone_environ()
   if tz is not None:
