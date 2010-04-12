@@ -99,7 +99,7 @@ def localize(dt):
     if dt.tzinfo:
         return dt.astimezone(localtz())
     tz = localtz()
-    if hasattr(tz, "lcoalize"):
+    if hasattr(tz, "localize"):
         return tz.localize(dt)
     return dt.replace(tzinfo=tz)
 
