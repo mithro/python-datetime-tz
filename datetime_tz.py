@@ -143,7 +143,7 @@ def detect_timezone():
   # Windows
   try:
       import win32timezone
-      return win32timezone.TimeZoneInfo.local()
+      return pytz.timezone(win32timezones[win32timezone.TimeZoneInfo.local().timeZoneName])
   except ImportError:
       pass
 
@@ -734,3 +734,102 @@ for methodname in ["__add__", "__radd__", "__rsub__", "__sub__", "combine"]:
   assert methodname not in datetime_tz.__dict__
 
   _wrap_method(methodname)
+
+# Map between Windows an Olson timezones taken from http://www.unicode.org/repos/cldr/trunk/common/supplemental/windowsZones.xml
+win32timezones = {"AUS Central Standard Time": "Australia/Darwin", # S (GMT+09:30) Darwin
+"AUS Eastern Standard Time": "Australia/Sydney", # D (GMT+10:00) Canberra, Melbourne, Sydney
+"Afghanistan Standard Time": "Asia/Kabul", # S (GMT+04:30) Kabul
+"Alaskan Standard Time": "America/Anchorage", # D (GMT-09:00) Alaska
+"Arab Standard Time": "Asia/Riyadh", # S (GMT+03:00) Kuwait, Riyadh
+"Arabian Standard Time": "Asia/Dubai", # S (GMT+04:00) Abu Dhabi, Muscat
+"Arabic Standard Time": "Asia/Baghdad", # S (GMT+03:00) Baghdad
+"Argentina Standard Time": "America/Buenos_Aires", # D (GMT-03:00) Buenos Aires
+"Armenian Standard Time": "Asia/Yerevan", # D [XP] (GMT+04:00) Yerevan
+"Atlantic Standard Time": "America/Halifax", # D (GMT-04:00) Atlantic Time (Canada)
+"Azerbaijan Standard Time": "Asia/Baku", # D (GMT+04:00) Baku
+"Azores Standard Time": "Atlantic/Azores", # D (GMT-01:00) Azores
+"Bangladesh Standard Time": "Asia/Dhaka", # D (GMT+06:00) Dhaka
+"Canada Central Standard Time": "America/Regina", # S (GMT-06:00) Saskatchewan
+"Cape Verde Standard Time": "Atlantic/Cape_Verde", # S (GMT-01:00) Cape Verde Is.
+"Caucasus Standard Time": "Asia/Yerevan", # D (GMT+04:00) Yerevan / S [XP] (GMT+04:00) Caucasus Standard Time
+"Cen. Australia Standard Time": "Australia/Adelaide", # D (GMT+09:30) Adelaide
+"Central America Standard Time": "America/Guatemala", # S (GMT-06:00) Central America
+"Central Asia Standard Time": "Asia/Almaty", # S (GMT+06:00) Astana
+"Central Brazilian Standard Time": "America/Campo_Grande", # D (GMT-04:00) Manaus
+"Central Europe Standard Time": "Europe/Budapest", # D (GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague
+"Central European Standard Time": "Europe/Warsaw", # D (GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb
+"Central Pacific Standard Time": "Pacific/Guadalcanal", # S (GMT+11:00) Magadan, Solomon Is., New Caledonia
+"Central Standard Time": "America/Chicago", # D (GMT-06:00) Central Time (US & Canada)
+"Central Standard Time (Mexico)": "America/Mexico_City", # D (GMT-06:00) Guadalajara, Mexico City, Monterrey
+"China Standard Time": "Asia/Shanghai", # S (GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi
+"Dateline Standard Time": "Etc/GMT+12", # S (GMT-12:00) International Date Line West
+"E. Africa Standard Time": "Africa/Nairobi", # S (GMT+03:00) Nairobi
+"E. Australia Standard Time": "Australia/Brisbane", # S (GMT+10:00) Brisbane
+"E. Europe Standard Time": "Europe/Minsk", # D (GMT+02:00) Minsk
+"E. South America Standard Time": "America/Sao_Paulo", # D (GMT-03:00) Brasilia
+"Eastern Standard Time": "America/New_York", # D (GMT-05:00) Eastern Time (US & Canada)
+"Egypt Standard Time": "Africa/Cairo", # D (GMT+02:00) Cairo
+"Ekaterinburg Standard Time": "Asia/Yekaterinburg", # D (GMT+05:00) Ekaterinburg
+"FLE Standard Time": "Europe/Kiev", # D (GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius
+"Fiji Standard Time": "Pacific/Fiji", # D (GMT+12:00) Fiji, Marshall Is.
+"GMT Standard Time": "Europe/London", # D (GMT) Greenwich Mean Time : Dublin, Edinburgh, Lisbon, London
+"GTB Standard Time": "Europe/Istanbul", # D (GMT+02:00) Athens, Bucharest, Istanbul
+"Georgian Standard Time": "Etc/GMT-3", # S (GMT+03:00) Tbilisi
+"Greenland Standard Time": "America/Godthab", # D (GMT-03:00) Greenland
+"Greenwich Standard Time": "Atlantic/Reykjavik", # S (GMT) Monrovia, Reykjavik
+"Hawaiian Standard Time": "Pacific/Honolulu", # S (GMT-10:00) Hawaii
+"India Standard Time": "Asia/Calcutta", # S (GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi
+"Iran Standard Time": "Asia/Tehran", # D (GMT+03:30) Tehran
+"Israel Standard Time": "Asia/Jerusalem", # D (GMT+02:00) Jerusalem
+"Jordan Standard Time": "Asia/Amman", # D (GMT+02:00) Amman
+"Kamchatka Standard Time": "Asia/Kamchatka", # D (GMT+12:00) Petropavlovsk-Kamchatsky
+"Korea Standard Time": "Asia/Seoul", # S (GMT+09:00) Seoul
+"Mauritius Standard Time": "Indian/Mauritius", # D (GMT+04:00) Port Louis
+"Mexico Standard Time": "America/Mexico_City", # D [XP] (GMT-06:00) Guadalajara, Mexico City, Monterrey - Old
+"Mexico Standard Time 2": "America/Chihuahua", # D [XP] (GMT-07:00) Chihuahua, La Paz, Mazatlan - Old
+"Mid-Atlantic Standard Time": "Etc/GMT+2", # D (GMT-02:00) Mid-Atlantic
+"Middle East Standard Time": "Asia/Beirut", # D (GMT+02:00) Beirut
+"Montevideo Standard Time": "America/Montevideo", # D (GMT-03:00) Montevideo
+"Morocco Standard Time": "Africa/Casablanca", # D (GMT) Casablanca
+"Mountain Standard Time": "America/Denver", # D (GMT-07:00) Mountain Time (US & Canada)
+"Mountain Standard Time (Mexico)": "America/Chihuahua", # (GMT-07:00) Chihuahua, La Paz, Mazatlan
+"Myanmar Standard Time": "Asia/Rangoon", # S (GMT+06:30) Yangon (Rangoon)
+"N. Central Asia Standard Time": "Asia/Novosibirsk", # D (GMT+06:00) Novosibirsk
+"Namibia Standard Time": "Africa/Windhoek", # D (GMT+02:00) Windhoek
+"Nepal Standard Time": "Asia/Katmandu", # S (GMT+05:45) Kathmandu
+"New Zealand Standard Time": "Pacific/Auckland", # D (GMT+12:00) Auckland, Wellington
+"Newfoundland Standard Time": "America/St_Johns", # D (GMT-03:30) Newfoundland
+"North Asia East Standard Time": "Asia/Irkutsk", # D (GMT+08:00) Irkutsk
+"North Asia Standard Time": "Asia/Krasnoyarsk", # D (GMT+07:00) Krasnoyarsk
+"Pacific SA Standard Time": "America/Santiago", # D (GMT-04:00) Santiago
+"Pacific Standard Time": "America/Los_Angeles", # D (GMT-08:00) Pacific Time (US & Canada)
+"Pacific Standard Time (Mexico)": "America/Tijuana", # D (GMT-08:00) Tijuana, Baja California
+"Pakistan Standard Time": "Asia/Karachi", # D (GMT+05:00) Islamabad, Karachi
+"Paraguay Standard Time": "America/Asuncion", # (GMT-04:00) Asuncion
+"Romance Standard Time": "Europe/Paris", # D (GMT+01:00) Brussels, Copenhagen, Madrid, Paris
+"Russian Standard Time": "Europe/Moscow", # D (GMT+03:00) Moscow, St. Petersburg, Volgograd
+"SA Eastern Standard Time": "America/Cayenne", # S (GMT-03:00) Cayenne
+"SA Pacific Standard Time": "America/Bogota", # S (GMT-05:00) Bogota, Lima, Quito
+"SA Western Standard Time": "America/La_Paz", # S (GMT-04:00) Georgetown, La Paz, San Juan
+"SE Asia Standard Time": "Asia/Bangkok", # S (GMT+07:00) Bangkok, Hanoi, Jakarta
+"Samoa Standard Time": "Pacific/Apia", # S (GMT-11:00) Midway Island, Samoa
+"Singapore Standard Time": "Asia/Singapore", # S (GMT+08:00) Kuala Lumpur, Singapore
+"South Africa Standard Time": "Africa/Johannesburg", # S (GMT+02:00) Harare, Pretoria
+"Sri Lanka Standard Time": "Asia/Colombo", # S (GMT+05:30) Sri Jayawardenepura
+"Taipei Standard Time": "Asia/Taipei", # S (GMT+08:00) Taipei
+"Tasmania Standard Time": "Australia/Hobart", # D (GMT+10:00) Hobart
+"Tokyo Standard Time": "Asia/Tokyo", # S (GMT+09:00) Osaka, Sapporo, Tokyo
+"Tonga Standard Time": "Pacific/Tongatapu", # S (GMT+13:00) Nuku'alofa
+"US Eastern Standard Time": "Etc/GMT+5", # S (GMT-05:00) Indiana (East)
+"US Mountain Standard Time": "America/Phoenix", # S (GMT-07:00) Arizona
+"UTC": "Etc/GMT", # S (GMT) Coordinated Universal Time
+"Ulaanbaatar Standard Time": "Asia/Ulaanbaatar", # (GMT+08:00) Ulaanbaatar
+"Venezuela Standard Time": "America/Caracas", # S (GMT-04:30) Caracas
+"Vladivostok Standard Time": "Asia/Vladivostok", # D (GMT+10:00) Vladivostok
+"W. Australia Standard Time": "Australia/Perth", # D (GMT+08:00) Perth
+"W. Central Africa Standard Time": "Africa/Lagos", # S (GMT+01:00) West Central Africa
+"W. Europe Standard Time": "Europe/Berlin", # D (GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna
+"West Asia Standard Time": "Asia/Tashkent", # S (GMT+05:00) Tashkent
+"West Pacific Standard Time": "Pacific/Port_Moresby", # S (GMT+10:00) Guam, Port Moresby
+"Yakutsk Standard Time": "Asia/Yakutsk" # D (GMT+09:00) Yakutsk
+}
