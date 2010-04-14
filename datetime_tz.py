@@ -94,14 +94,12 @@ _localtz = None
 def localize(dt):
     """Localize a datetime to the local timezone
 
-    If dt is naive, returns the same datetime with the lcoal timezone
+    If dt is naive, returns the same datetime with the local timezone
     Else, uses astimezone to convert"""
     if dt.tzinfo:
         return dt.astimezone(localtz())
     tz = localtz()
-    if hasattr(tz, "localize"):
-        return tz.localize(dt)
-    return dt.replace(tzinfo=tz)
+    return tz.localize(dt)
 
 def localtz():
   """Get the local timezone.
