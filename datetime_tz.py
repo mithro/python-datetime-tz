@@ -196,36 +196,31 @@ def _detect_timezone_etc_timezone():
     except IOError, eo:
       warnings.warn("Could not access your /etc/timezone file: %s" % eo)
 
+def _tz_cmp_dict(tz):
+    """Creates a dictionary of values for comparing tzinfo objects"""
+    attribs = [(attrib, getattr(tz, attrib)) for attrib in dir(tz) if not (attrib.startswith("__") or attrib in ("zone", "_tzinfos"))]
+    attribs = [(attrib, value) for attrib, value in attribs if not callable(value)]
+    return dict(attribs)
 
 def _detect_timezone_etc_localtime():
   matches = []
   if os.path.exists("/etc/localtime"):
     localtime = pytz.tzfile.build_tzinfo("/etc/localtime",
                                          file("/etc/localtime"))
+    localtime_cd = _tz_cmp_dict(localtime)
 
-    # See if we can find a "Human Name" for this..
-    for tzname in pytz.all_timezones:
-      tz = _tzinfome(tzname)
-
-      if dir(tz) != dir(localtime):
-        continue
-
-      for attrib in dir(tz):
-        # Ignore functions and specials
-        if callable(getattr(tz, attrib)) or attrib.startswith("__"):
-          continue
-
-        # This will always be different
-        if attrib == "zone" or attrib == "_tzinfos":
-          continue
-
-        if getattr(tz, attrib) != getattr(localtime, attrib):
-          break
-
-      # We get here iff break didn't happen, i.e. no meaningful attributes
-      # differ between tz and localtime
-      else:
+    # See if we can find a "Human Name" for this.. Shortcut to common timezones
+    for tzname in pytz.common_timezones:
+      tz_cd = _tz_cmp_dict(_tzinfome(tzname))
+      if tz_cd == localtime_cd:
         matches.append(tzname)
+    if not matches:
+      for tzname in pytz.all_timezones:
+        if tzname in pytz.common_timezones_set:
+          continue
+        tz_cd = _tz_cmp_dict(_tzinfome(tzname))
+        if tz_cd == localtime_cd:
+          matches.append(tzname)
 
     if len(matches) == 1:
       return _tzinfome(matches[0])
@@ -235,6 +230,7 @@ def _detect_timezone_etc_localtime():
       if len(matches) > 1:
         warning += ("We detected multiple matches for your /etc/localtime. "
                     "(Matches where %s)" % matches)
+        return _tzinfome(matches[0])
       else:
         warning += "We detected no matches for your /etc/localtime."
       warnings.warn(warning)
