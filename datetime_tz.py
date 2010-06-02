@@ -101,6 +101,16 @@ def localize(dt):
     tz = localtz()
     return tz.localize(dt)
 
+def get_naive(dt):
+    """Gets a naive datetime from a datetime.
+
+    datetime_tz objects can't just have tzinfo replaced with None - you need to call asdatetime"""
+    if not dt.tzinfo:
+        return dt
+    if hasattr(dt, "asdatetime"):
+        return dt.asdatetime()
+    return dt.replace(tzinfo=None)
+
 def localtz():
   """Get the local timezone.
 
