@@ -19,7 +19,7 @@
 # Disable the exception does nothing, as we want to test exceptions.
 # Disable the missing docstrings as test methods are 'self documenting'.
 # Disable the override inbuilt, because that is exactly what we want to do.
-# pylint: disable-msg=W0212,C6409,C6111,W0622,W0704
+# pylint: disable-msg=W0212,C6409,C6111,W0622,W0704,W0611
 
 """Tests for the datetime_tz module."""
 
@@ -31,9 +31,22 @@ import os
 import StringIO
 import unittest
 import warnings
-import datetime_tz
 import dateutil
 import pytz
+
+import datetime_tz
+
+
+FMT = "%Y-%m-%d %H:%M:%S %Z%z"
+
+
+# Older versions of pytz only have AmbiguousTimeError, while newer versions
+# throw NonExistentTimeError.
+if not hasattr(pytz, "NonExistentTimeError"):
+  pytz.NonExistentTimeError = pytz.AmbiguousTimeError
+
+
+import datetime_tz
 
 
 class MockMe(object):
@@ -182,18 +195,18 @@ class TestDatetimeTZ(unittest.TestCase):
     # different timestamps.
     #
     # Well not anymore!
-    utc = pytz.timezone('UTC')
+    utc = pytz.timezone("UTC")
     a = datetime_tz.datetime_tz(2008, 7, 6, 5, 4, 3, tzinfo=utc)
-    self.assertEqual(str(a), '2008-07-06 05:04:03+00:00')
+    self.assertEqual(str(a), "2008-07-06 05:04:03+00:00")
     self.assertEqual(a.totimestamp(), 1215320643.0)
     # FIXME(tansell): %s is effected by the TZ environment value.
-    #self.assertEqual(a.strftime("%s"), '1215284643')
+    #self.assertEqual(a.strftime("%s"), "1215284643")
 
-    italy = pytz.timezone('Europe/Rome')
+    italy = pytz.timezone("Europe/Rome")
     b = a.astimezone(italy)
-    self.assertEqual(str(b), '2008-07-06 07:04:03+02:00')
+    self.assertEqual(str(b), "2008-07-06 07:04:03+02:00")
     self.assertEqual(b.totimestamp(), 1215320643.0)
-    #self.assertNotEqual(b.strftime("%s"), '1215284643')
+    #self.assertNotEqual(b.strftime("%s"), "1215284643")
 
     # TODO(tansell): We still discard timezone information in strptime...
     # datetime.strptime silently throws away all timezone information. If you
@@ -267,8 +280,6 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertFalse(d0 is d1)
 
   def testBadDates(self):
-    fmt = "%Y-%m-%d %H:%M:%S %Z%z"
-
     # For example, 1:30am on 27th Oct 2002 happened twice in the US/Eastern
     # timezone when the clocks where put back at the end of Daylight Savings
     # Time.
@@ -283,39 +294,41 @@ class TestDatetimeTZ(unittest.TestCase):
 
     dt2 = datetime_tz.datetime_tz(
         loc_dt, pytz.timezone("US/Eastern"), is_dst=False)
-    self.assertEqual(dt2.strftime(fmt), "2002-10-27 01:30:00 EST-0500")
+    self.assertEqual(dt2.strftime(FMT), "2002-10-27 01:30:00 EST-0500")
 
     dt1 = datetime_tz.datetime_tz(
         loc_dt, pytz.timezone("US/Eastern"), is_dst=True)
-    self.assertEqual(dt1.strftime(fmt), "2002-10-27 01:30:00 EDT-0400")
+    self.assertEqual(dt1.strftime(FMT), "2002-10-27 01:30:00 EDT-0400")
 
     # Similarly, 2:30am on 7th April 2002 never happened at all in the
     # US/Eastern timezone, as the clock where put forward at 2:00am skipping the
     # entire hour.
     loc_dt = datetime.datetime(2002, 4, 7, 2, 30, 00)
 
-    # Older versions of pytz only have AmbiguousTimeError, while newer versions
-    # throw NonExistentTimeError.
-    if hasattr(pytz, "NonExistentTimeError"):
-      raiseme = (pytz.AmbiguousTimeError, pytz.NonExistentTimeError)
-    else:
-      raiseme = pytz.AmbiguousTimeError
-
+    raiseme = (pytz.AmbiguousTimeError, pytz.NonExistentTimeError)
     self.assertRaises(raiseme, datetime_tz.datetime_tz,
                       loc_dt, pytz.timezone("US/Eastern"))
-    #self.assertRaises(raiseme, datetime_tz.datetime_tz,
-    #                  loc_dt, pytz.timezone("US/Eastern"), is_dst=True)
-    #self.assertRaises(raiseme, datetime_tz.datetime_tz,
-    #                  loc_dt, pytz.timezone("US/Eastern"), is_dst=False)
+    self.assertRaises(raiseme, datetime_tz.datetime_tz,
+                      loc_dt, pytz.timezone("US/Eastern"), is_dst=True)
+    self.assertRaises(raiseme, datetime_tz.datetime_tz,
+                      loc_dt, pytz.timezone("US/Eastern"), is_dst=False)
 
-    # But make sure the cases still work when it's "now"
+    raiseme = (pytz.AmbiguousTimeError, pytz.NonExistentTimeError)
+    self.assertRaises(raiseme, datetime_tz.datetime_tz,
+                      loc_dt, pytz.timezone("US/Eastern"))
+    self.assertRaises(raiseme, datetime_tz.datetime_tz,
+                      loc_dt, pytz.timezone("US/Eastern"), is_dst=True)
+    self.assertRaises(raiseme, datetime_tz.datetime_tz,
+                      loc_dt, pytz.timezone("US/Eastern"), is_dst=False)
+
+    # But make sure the cases still work when it"s "now"
     @staticmethod
     def utcnowmockedt():
       return datetime_tz.datetime_tz(2002, 10, 27, 5, 30, tzinfo=pytz.utc)
 
     datetime_tz.localtz_set("US/Eastern")
     self.mocked("datetime_tz.datetime_tz.utcnow", utcnowmockedt)
-    self.assertEqual(datetime_tz.datetime_tz.now().strftime(fmt),
+    self.assertEqual(datetime_tz.datetime_tz.now().strftime(FMT),
                      "2002-10-27 01:30:00 EDT-0400")
 
     @staticmethod
@@ -324,67 +337,79 @@ class TestDatetimeTZ(unittest.TestCase):
 
     datetime_tz.localtz_set("US/Eastern")
     self.mocked("datetime_tz.datetime_tz.utcnow", utcnowmockest)
-    self.assertEqual(datetime_tz.datetime_tz.now().strftime(fmt),
+    self.assertEqual(datetime_tz.datetime_tz.now().strftime(FMT),
                      "2002-10-27 01:30:00 EST-0500")
 
-  def testAroundDst(self):
-    fmt = "%Y-%m-%d %H:%M:%S %Z%z"
+  def disabledTestBadDates2(self):
+    # FIXME(tansell): Make these tests pass
+    raiseme = (pytz.AmbiguousTimeError, pytz.NonExistentTimeError)
 
+    # 27th is not DST
+    loc_dt = datetime.datetime(2002, 10, 27, 1, 10, 00)
+    self.assertRaises(raiseme, datetime_tz.datetime_tz,
+                      loc_dt, pytz.timezone("US/Eastern"), is_dst=True)
+
+    # 25th is DST
+    loc_dt = datetime.datetime(2002, 10, 25, 1, 10, 00)
+    self.assertRaises(raiseme, datetime_tz.datetime_tz,
+                      loc_dt, pytz.timezone("US/Eastern"), is_dst=False)
+
+  def testAroundDst(self):
     # Testing going backwards into daylight savings
     utc_dt = datetime_tz.datetime_tz(2002, 10, 27, 6, 10, 0, tzinfo=pytz.utc)
     loc_dt = utc_dt.astimezone(pytz.timezone("US/Eastern"))
-    self.assertEqual(loc_dt.strftime(fmt), "2002-10-27 01:10:00 EST-0500")
+    self.assertEqual(loc_dt.strftime(FMT), "2002-10-27 01:10:00 EST-0500")
 
     before = loc_dt - datetime_tz.timedelta(minutes=10)
-    self.assertEqual(before.strftime(fmt), "2002-10-27 01:00:00 EST-0500")
+    self.assertEqual(before.strftime(FMT), "2002-10-27 01:00:00 EST-0500")
 
     before = loc_dt - datetime_tz.timedelta(minutes=20)
-    self.assertEqual(before.strftime(fmt), "2002-10-27 01:50:00 EDT-0400")
+    self.assertEqual(before.strftime(FMT), "2002-10-27 01:50:00 EDT-0400")
 
     after = loc_dt + datetime_tz.timedelta(minutes=10)
-    self.assertEqual(after.strftime(fmt), "2002-10-27 01:20:00 EST-0500")
+    self.assertEqual(after.strftime(FMT), "2002-10-27 01:20:00 EST-0500")
 
     # Testing going forwards out of daylight savings
     utc_dt = datetime_tz.datetime_tz(2002, 10, 27, 5, 50, 0, tzinfo=pytz.utc)
     loc_dt = utc_dt.astimezone(pytz.timezone("US/Eastern"))
-    self.assertEqual(loc_dt.strftime(fmt), "2002-10-27 01:50:00 EDT-0400")
+    self.assertEqual(loc_dt.strftime(FMT), "2002-10-27 01:50:00 EDT-0400")
 
     after = loc_dt + datetime_tz.timedelta(minutes=10)
-    self.assertEqual(after.strftime(fmt), "2002-10-27 01:00:00 EST-0500")
+    self.assertEqual(after.strftime(FMT), "2002-10-27 01:00:00 EST-0500")
 
     after = loc_dt + datetime_tz.timedelta(minutes=20)
-    self.assertEqual(after.strftime(fmt), "2002-10-27 01:10:00 EST-0500")
+    self.assertEqual(after.strftime(FMT), "2002-10-27 01:10:00 EST-0500")
 
     before = loc_dt - datetime_tz.timedelta(minutes=10)
-    self.assertEqual(before.strftime(fmt), "2002-10-27 01:40:00 EDT-0400")
+    self.assertEqual(before.strftime(FMT), "2002-10-27 01:40:00 EDT-0400")
 
     # Test going backwards out of daylight savings
     utc_dt = datetime_tz.datetime_tz(2002, 4, 7, 7, 10, 00, tzinfo=pytz.utc)
     loc_dt = utc_dt.astimezone(pytz.timezone("US/Eastern"))
-    self.assertEqual(loc_dt.strftime(fmt), "2002-04-07 03:10:00 EDT-0400")
+    self.assertEqual(loc_dt.strftime(FMT), "2002-04-07 03:10:00 EDT-0400")
 
     before = loc_dt - datetime_tz.timedelta(minutes=10)
-    self.assertEqual(before.strftime(fmt), "2002-04-07 03:00:00 EDT-0400")
+    self.assertEqual(before.strftime(FMT), "2002-04-07 03:00:00 EDT-0400")
 
     before = loc_dt - datetime_tz.timedelta(minutes=20)
-    self.assertEqual(before.strftime(fmt), "2002-04-07 01:50:00 EST-0500")
+    self.assertEqual(before.strftime(FMT), "2002-04-07 01:50:00 EST-0500")
 
     after = loc_dt + datetime_tz.timedelta(minutes=10)
-    self.assertEqual(after.strftime(fmt), "2002-04-07 03:20:00 EDT-0400")
+    self.assertEqual(after.strftime(FMT), "2002-04-07 03:20:00 EDT-0400")
 
     # Test going forwards into daylight savings
     utc_dt = datetime_tz.datetime_tz(2002, 4, 7, 6, 50, 00, tzinfo=pytz.utc)
     loc_dt = utc_dt.astimezone(pytz.timezone("US/Eastern"))
-    self.assertEqual(loc_dt.strftime(fmt), "2002-04-07 01:50:00 EST-0500")
+    self.assertEqual(loc_dt.strftime(FMT), "2002-04-07 01:50:00 EST-0500")
 
     after = loc_dt + datetime_tz.timedelta(minutes=10)
-    self.assertEqual(after.strftime(fmt), "2002-04-07 03:00:00 EDT-0400")
+    self.assertEqual(after.strftime(FMT), "2002-04-07 03:00:00 EDT-0400")
 
     after = loc_dt + datetime_tz.timedelta(minutes=20)
-    self.assertEqual(after.strftime(fmt), "2002-04-07 03:10:00 EDT-0400")
+    self.assertEqual(after.strftime(FMT), "2002-04-07 03:10:00 EDT-0400")
 
     before = loc_dt - datetime_tz.timedelta(minutes=10)
-    self.assertEqual(before.strftime(fmt), "2002-04-07 01:40:00 EST-0500")
+    self.assertEqual(before.strftime(FMT), "2002-04-07 01:40:00 EST-0500")
 
   def testOperations(self):
     dadd = datetime_tz.datetime_tz.now() + datetime.timedelta(days=1)
@@ -451,7 +476,7 @@ class TestDatetimeTZ(unittest.TestCase):
       self.assertEqual(d.totimestamp(), timestamp)
 
       # Changing the timezone should have no effect on the timestamp produced.
-      d = d.astimezone('UTC')
+      d = d.astimezone("UTC")
       self.assert_(isinstance(d, datetime_tz.datetime_tz))
       self.assertEqual(d.tzinfo, pytz.utc)
       self.assertEqual(d.totimestamp(), timestamp)
@@ -501,6 +526,91 @@ class TestDatetimeTZ(unittest.TestCase):
       self.fail("Was able to create a datetime_tz using fromordinal!")
     except SyntaxError:
       pass
+
+  def testReplace(self):
+    # Testing normal replace
+    dt = datetime_tz.datetime_tz(
+        2010, 3, 10, 17, 23, 26, 871430, "US/Pacific")
+
+    replaced = dt.replace(hour=0, minute=0, second=0, microsecond=1)
+    result = datetime_tz.datetime_tz(
+        2010, 3, 10, 0, 0, 0, 1, "US/Pacific")
+    self.assertEqual(result, replaced)
+
+    replaced = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+    result = datetime_tz.datetime_tz(
+        2010, 3, 10, 0, 0, 0, 0, "US/Pacific")
+    self.assertEqual(result, replaced)
+
+    # Test replacing across daylight savings boundary
+    dt = datetime_tz.datetime_tz(
+        2010, 3, 14, 17, 23, 26, 871430, "US/Pacific")
+
+    replaced = dt.replace(hour=0, minute=0, second=0, microsecond=1)
+    result = datetime_tz.datetime_tz(
+        2010, 3, 14, 0, 0, 0, 1, "US/Pacific")
+    self.assertEqual(result, replaced)
+
+    replaced = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+    result = datetime_tz.datetime_tz(
+        2010, 3, 14, 0, 0, 0, 0, "US/Pacific")
+    self.assertEqual(result, replaced)
+
+    # Test starting outside of DST
+    utc_dt = datetime_tz.datetime_tz(2002, 10, 27, 6, 10, 0, tzinfo=pytz.utc)
+    loc_dt = utc_dt.astimezone(pytz.timezone("US/Eastern"))
+    self.assertEqual(loc_dt.strftime(FMT), "2002-10-27 01:10:00 EST-0500")
+
+    # Since we don't start off in DST, so a replace should try and keep us out
+    # of DST
+    assert not loc_dt.is_dst
+
+    replace = loc_dt.replace(hour=1)
+    self.assertEqual(replace.strftime(FMT), "2002-10-27 01:10:00 EST-0500")
+
+    replace = loc_dt.replace(is_dst=False)
+    self.assertEqual(replace.strftime(FMT), "2002-10-27 01:10:00 EST-0500")
+
+    replace = loc_dt.replace(minute=50, second=0, microsecond=0)
+    self.assertEqual(replace.strftime(FMT), "2002-10-27 01:50:00 EST-0500")
+
+    # Unless we are also replacing the DST flag
+    replace = loc_dt.replace(hour=1, is_dst=True)
+    self.assertEqual(replace.strftime(FMT), "2002-10-27 01:10:00 EDT-0400")
+
+    replace = loc_dt.replace(is_dst=True)
+    self.assertEqual(replace.strftime(FMT), "2002-10-27 01:10:00 EDT-0400")
+
+    replace = loc_dt.replace(minute=50, second=0, microsecond=0, is_dst=True)
+    self.assertEqual(replace.strftime(FMT), "2002-10-27 01:50:00 EDT-0400")
+
+    # But if we go too far, replace should still do the right thing
+    replace = loc_dt.replace(day=26)
+    self.assertEqual(replace.strftime(FMT), "2002-10-26 01:10:00 EDT-0400")
+
+    replace = loc_dt.replace(day=28)
+    self.assertEqual(replace.strftime(FMT), "2002-10-28 01:10:00 EST-0500")
+
+    # FIXME(tansell): Make these test work.
+    #self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
+    #                  day=26, is_dst=False)
+    #self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
+    #                  day=28, is_dst=True)
+
+    # Testing starting in DST
+    utc_dt = datetime_tz.datetime_tz(2002, 4, 7, 7, 10, 00, tzinfo=pytz.utc)
+    loc_dt = utc_dt.astimezone(pytz.timezone("US/Eastern"))
+    self.assertEqual(loc_dt.strftime(FMT), "2002-04-07 03:10:00 EDT-0400")
+
+    # Since we start in DST, so a replace should try and keep us in DST.
+    assert loc_dt.is_dst
+
+    replace = loc_dt.replace(minute=0, second=0, microsecond=0)
+    self.assertEqual(replace.strftime(FMT), "2002-04-07 03:00:00 EDT-0400")
+
+    # 2:30 doesn't actually exist
+    self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
+                      hour=2, minute=30, second=0, microsecond=0)
 
   def testSmartParse(self):
     datetime_tz.localtz_set("Australia/Sydney")
