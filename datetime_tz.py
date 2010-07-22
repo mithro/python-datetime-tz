@@ -44,6 +44,7 @@ import dateutil.parser
 import dateutil.relativedelta
 import dateutil.tz
 import pytz
+from j5.OS import win32tz_map
 
 
 try:
@@ -156,7 +157,7 @@ def detect_timezone():
       if not win32timezone_to_en:
           win32timezone_to_en = dict(win32timezone.TimeZoneInfo._get_indexed_time_zone_keys())
       win32timezone_name_en = win32timezone_to_en.get(win32tz_name, win32tz_name)
-      olsen_name = win32timezones.get(win32timezone_name_en, None)
+      olsen_name = win32tz_map.win32timezones.get(win32timezone_name_en, None)
       if not olsen_name:
           raise ValueError(u"Could not map win32 timezone name %s (English %s) to Olsen timezone name" % (win32tz_name, win32timezone_name_en))
       return pytz.timezone(olsen_name)
@@ -749,101 +750,57 @@ for methodname in ["__add__", "__radd__", "__rsub__", "__sub__", "combine"]:
 
 # Global variable for mapping Window timezone names in the current locale to english ones. Initialized when needed
 win32timezone_to_en = {}
-# Map between Windows an Olson timezones taken from http://www.unicode.org/repos/cldr/trunk/common/supplemental/windowsZones.xml
-win32timezones = {"AUS Central Standard Time": "Australia/Darwin", # S (GMT+09:30) Darwin
-"AUS Eastern Standard Time": "Australia/Sydney", # D (GMT+10:00) Canberra, Melbourne, Sydney
-"Afghanistan Standard Time": "Asia/Kabul", # S (GMT+04:30) Kabul
-"Alaskan Standard Time": "America/Anchorage", # D (GMT-09:00) Alaska
-"Arab Standard Time": "Asia/Riyadh", # S (GMT+03:00) Kuwait, Riyadh
-"Arabian Standard Time": "Asia/Dubai", # S (GMT+04:00) Abu Dhabi, Muscat
-"Arabic Standard Time": "Asia/Baghdad", # S (GMT+03:00) Baghdad
-"Argentina Standard Time": "America/Buenos_Aires", # D (GMT-03:00) Buenos Aires
-"Armenian Standard Time": "Asia/Yerevan", # D [XP] (GMT+04:00) Yerevan
-"Atlantic Standard Time": "America/Halifax", # D (GMT-04:00) Atlantic Time (Canada)
-"Azerbaijan Standard Time": "Asia/Baku", # D (GMT+04:00) Baku
-"Azores Standard Time": "Atlantic/Azores", # D (GMT-01:00) Azores
-"Bangladesh Standard Time": "Asia/Dhaka", # D (GMT+06:00) Dhaka
-"Canada Central Standard Time": "America/Regina", # S (GMT-06:00) Saskatchewan
-"Cape Verde Standard Time": "Atlantic/Cape_Verde", # S (GMT-01:00) Cape Verde Is.
-"Caucasus Standard Time": "Asia/Yerevan", # D (GMT+04:00) Yerevan / S [XP] (GMT+04:00) Caucasus Standard Time
-"Cen. Australia Standard Time": "Australia/Adelaide", # D (GMT+09:30) Adelaide
-"Central America Standard Time": "America/Guatemala", # S (GMT-06:00) Central America
-"Central Asia Standard Time": "Asia/Almaty", # S (GMT+06:00) Astana
-"Central Brazilian Standard Time": "America/Campo_Grande", # D (GMT-04:00) Manaus
-"Central Europe Standard Time": "Europe/Budapest", # D (GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague
-"Central European Standard Time": "Europe/Warsaw", # D (GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb
-"Central Pacific Standard Time": "Pacific/Guadalcanal", # S (GMT+11:00) Magadan, Solomon Is., New Caledonia
-"Central Standard Time": "America/Chicago", # D (GMT-06:00) Central Time (US & Canada)
-"Central Standard Time (Mexico)": "America/Mexico_City", # D (GMT-06:00) Guadalajara, Mexico City, Monterrey
-"China Standard Time": "Asia/Shanghai", # S (GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi
-"Dateline Standard Time": "Etc/GMT+12", # S (GMT-12:00) International Date Line West
-"E. Africa Standard Time": "Africa/Nairobi", # S (GMT+03:00) Nairobi
-"E. Australia Standard Time": "Australia/Brisbane", # S (GMT+10:00) Brisbane
-"E. Europe Standard Time": "Europe/Minsk", # D (GMT+02:00) Minsk
-"E. South America Standard Time": "America/Sao_Paulo", # D (GMT-03:00) Brasilia
-"Eastern Standard Time": "America/New_York", # D (GMT-05:00) Eastern Time (US & Canada)
-"Egypt Standard Time": "Africa/Cairo", # D (GMT+02:00) Cairo
-"Ekaterinburg Standard Time": "Asia/Yekaterinburg", # D (GMT+05:00) Ekaterinburg
-"FLE Standard Time": "Europe/Kiev", # D (GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius
-"Fiji Standard Time": "Pacific/Fiji", # D (GMT+12:00) Fiji, Marshall Is.
-"GMT Standard Time": "Europe/London", # D (GMT) Greenwich Mean Time : Dublin, Edinburgh, Lisbon, London
-"GTB Standard Time": "Europe/Istanbul", # D (GMT+02:00) Athens, Bucharest, Istanbul
-"Georgian Standard Time": "Etc/GMT-3", # S (GMT+03:00) Tbilisi
-"Greenland Standard Time": "America/Godthab", # D (GMT-03:00) Greenland
-"Greenwich Standard Time": "Atlantic/Reykjavik", # S (GMT) Monrovia, Reykjavik
-"Hawaiian Standard Time": "Pacific/Honolulu", # S (GMT-10:00) Hawaii
-"India Standard Time": "Asia/Calcutta", # S (GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi
-"Iran Standard Time": "Asia/Tehran", # D (GMT+03:30) Tehran
-"Israel Standard Time": "Asia/Jerusalem", # D (GMT+02:00) Jerusalem
-"Jordan Standard Time": "Asia/Amman", # D (GMT+02:00) Amman
-"Kamchatka Standard Time": "Asia/Kamchatka", # D (GMT+12:00) Petropavlovsk-Kamchatsky
-"Korea Standard Time": "Asia/Seoul", # S (GMT+09:00) Seoul
-"Mauritius Standard Time": "Indian/Mauritius", # D (GMT+04:00) Port Louis
-"Mexico Standard Time": "America/Mexico_City", # D [XP] (GMT-06:00) Guadalajara, Mexico City, Monterrey - Old
-"Mexico Standard Time 2": "America/Chihuahua", # D [XP] (GMT-07:00) Chihuahua, La Paz, Mazatlan - Old
-"Mid-Atlantic Standard Time": "Etc/GMT+2", # D (GMT-02:00) Mid-Atlantic
-"Middle East Standard Time": "Asia/Beirut", # D (GMT+02:00) Beirut
-"Montevideo Standard Time": "America/Montevideo", # D (GMT-03:00) Montevideo
-"Morocco Standard Time": "Africa/Casablanca", # D (GMT) Casablanca
-"Mountain Standard Time": "America/Denver", # D (GMT-07:00) Mountain Time (US & Canada)
-"Mountain Standard Time (Mexico)": "America/Chihuahua", # (GMT-07:00) Chihuahua, La Paz, Mazatlan
-"Myanmar Standard Time": "Asia/Rangoon", # S (GMT+06:30) Yangon (Rangoon)
-"N. Central Asia Standard Time": "Asia/Novosibirsk", # D (GMT+06:00) Novosibirsk
-"Namibia Standard Time": "Africa/Windhoek", # D (GMT+02:00) Windhoek
-"Nepal Standard Time": "Asia/Katmandu", # S (GMT+05:45) Kathmandu
-"New Zealand Standard Time": "Pacific/Auckland", # D (GMT+12:00) Auckland, Wellington
-"Newfoundland Standard Time": "America/St_Johns", # D (GMT-03:30) Newfoundland
-"North Asia East Standard Time": "Asia/Irkutsk", # D (GMT+08:00) Irkutsk
-"North Asia Standard Time": "Asia/Krasnoyarsk", # D (GMT+07:00) Krasnoyarsk
-"Pacific SA Standard Time": "America/Santiago", # D (GMT-04:00) Santiago
-"Pacific Standard Time": "America/Los_Angeles", # D (GMT-08:00) Pacific Time (US & Canada)
-"Pacific Standard Time (Mexico)": "America/Tijuana", # D (GMT-08:00) Tijuana, Baja California
-"Pakistan Standard Time": "Asia/Karachi", # D (GMT+05:00) Islamabad, Karachi
-"Paraguay Standard Time": "America/Asuncion", # (GMT-04:00) Asuncion
-"Romance Standard Time": "Europe/Paris", # D (GMT+01:00) Brussels, Copenhagen, Madrid, Paris
-"Russian Standard Time": "Europe/Moscow", # D (GMT+03:00) Moscow, St. Petersburg, Volgograd
-"SA Eastern Standard Time": "America/Cayenne", # S (GMT-03:00) Cayenne
-"SA Pacific Standard Time": "America/Bogota", # S (GMT-05:00) Bogota, Lima, Quito
-"SA Western Standard Time": "America/La_Paz", # S (GMT-04:00) Georgetown, La Paz, San Juan
-"SE Asia Standard Time": "Asia/Bangkok", # S (GMT+07:00) Bangkok, Hanoi, Jakarta
-"Samoa Standard Time": "Pacific/Apia", # S (GMT-11:00) Midway Island, Samoa
-"Singapore Standard Time": "Asia/Singapore", # S (GMT+08:00) Kuala Lumpur, Singapore
-"South Africa Standard Time": "Africa/Johannesburg", # S (GMT+02:00) Harare, Pretoria
-"Sri Lanka Standard Time": "Asia/Colombo", # S (GMT+05:30) Sri Jayawardenepura
-"Taipei Standard Time": "Asia/Taipei", # S (GMT+08:00) Taipei
-"Tasmania Standard Time": "Australia/Hobart", # D (GMT+10:00) Hobart
-"Tokyo Standard Time": "Asia/Tokyo", # S (GMT+09:00) Osaka, Sapporo, Tokyo
-"Tonga Standard Time": "Pacific/Tongatapu", # S (GMT+13:00) Nuku'alofa
-"US Eastern Standard Time": "Etc/GMT+5", # S (GMT-05:00) Indiana (East)
-"US Mountain Standard Time": "America/Phoenix", # S (GMT-07:00) Arizona
-"UTC": "Etc/GMT", # S (GMT) Coordinated Universal Time
-"Ulaanbaatar Standard Time": "Asia/Ulaanbaatar", # (GMT+08:00) Ulaanbaatar
-"Venezuela Standard Time": "America/Caracas", # S (GMT-04:30) Caracas
-"Vladivostok Standard Time": "Asia/Vladivostok", # D (GMT+10:00) Vladivostok
-"W. Australia Standard Time": "Australia/Perth", # D (GMT+08:00) Perth
-"W. Central Africa Standard Time": "Africa/Lagos", # S (GMT+01:00) West Central Africa
-"W. Europe Standard Time": "Europe/Berlin", # D (GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna
-"West Asia Standard Time": "Asia/Tashkent", # S (GMT+05:00) Tashkent
-"West Pacific Standard Time": "Pacific/Port_Moresby", # S (GMT+10:00) Guam, Port Moresby
-"Yakutsk Standard Time": "Asia/Yakutsk" # D (GMT+09:00) Yakutsk
-}
+
+def download_cldr_win32tz_map_xml():
+    """Downloads the xml that maps between Windows and Olson timezone names"""
+    import urllib2
+    return urllib2.urlopen("http://www.unicode.org/repos/cldr/trunk/common/supplemental/windowsZones.xml").read()
+
+def create_win32tz_map(windows_zones_xml):
+    """Creates a map between Windows and Olson timezone names based on the cldr xml mapping. Yields win32_name, olson_name, comment tuples"""
+    import genshi.input
+    import StringIO
+    just_closed = None
+    parser = genshi.input.XMLParser(StringIO.StringIO(windows_zones_xml))
+    map_zones = {}
+    zone_comments = {}
+    for kind, data, pos in parser:
+        print kind, data
+        if kind == genshi.core.START and str(data[0]) == 'mapZone':
+            attrs = data[1]
+            win32_name, olson_name = attrs.get("other"), attrs.get("type")
+            map_zones[win32_name] = olson_name
+        elif kind == genshi.core.END and str(data) == 'mapZone':
+            just_closed = win32_name
+        elif kind == genshi.core.COMMENT and just_closed:
+            zone_comments[just_closed] = data.strip()
+        elif kind in (genshi.core.START, genshi.core.END, genshi.core.COMMENT):
+            just_closed = None
+    for win32_name in sorted(map_zones):
+        yield (win32_name, map_zones[win32_name], zone_comments.get(win32_name, None))
+
+def update_stored_win32tz_map():
+    """downloads the cldr win32 timezone map and stores it in win32tz_map.py"""
+    import hashlib
+    windows_zones_xml = download_cldr_win32tz_map_xml()
+    source_hash = hashlib.md5(windows_zones_xml).hexdigest()
+    map_zones = create_win32tz_map(windows_zones_xml)
+    map_dir = os.path.dirname(os.path.abspath(__file__))
+    map_filename = os.path.join(map_dir, "win32tz_map.py")
+    reload(win32tz_map)
+    current_hash = getattr(win32tz_map, "source_hash", None)
+    if current_hash == source_hash:
+        return False
+    map_file = open(map_filename, "w")
+    comment = "Map between Windows an Olson timezones taken from http://www.unicode.org/repos/cldr/trunk/common/supplemental/windowsZones.xml"
+    comment2 = "Generated automatically from datetime_tz.py"
+    map_file.write("'''%s\n" % comment)
+    map_file.write("%s'''\n" % comment2)
+    map_file.write("source_hash = '%s' # md5 sum of xml source data\n" % (source_hash))
+    map_file.write("win32timezones = {\n")
+    for win32_name, olson_name, comment in map_zones:
+        map_file.write("    %r: %r, # %s\n" % (win32_name, olson_name, comment or ''))
+    map_file.write("}\n")
+    map_file.close()
+    return True
+
