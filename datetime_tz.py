@@ -124,6 +124,9 @@ def localtz():
     _localtz = detect_timezone()
   return _localtz
 
+def localtz_name():
+   """Returns the name of the local timezone"""
+   return str(localtz())
 
 def localtz_set(timezone):
   """Set the local timezone."""
