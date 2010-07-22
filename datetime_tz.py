@@ -149,9 +149,17 @@ def detect_timezone():
     pytz.UnknownTimeZoneError: If it was unable to detect a timezone.
   """
   # Windows
+  global win32timezone_to_en
   try:
       import win32timezone
-      return pytz.timezone(win32timezones[win32timezone.TimeZoneInfo.local().timeZoneName])
+      win32tz_name = win32timezone.TimeZoneInfo.local().timeZoneName
+      if not win32timezone_to_en:
+          win32timezone_to_en = dict(win32timezone.TimeZoneInfo._get_indexed_time_zone_keys())
+      win32timezone_name_en = win32timezone_to_en.get(win32tz_name, win32tz_name)
+      olsen_name = win32timezones.get(win32timezone_name_en, None)
+      if not olsen_name:
+          raise ValueError(u"Could not map win32 timezone name %s (English %s) to Olsen timezone name" % (win32tz_name, win32timezone_name_en))
+      return pytz.timezone(olsen_name)
   except ImportError:
       pass
 
@@ -739,6 +747,8 @@ for methodname in ["__add__", "__radd__", "__rsub__", "__sub__", "combine"]:
 
   _wrap_method(methodname)
 
+# Global variable for mapping Window timezone names in the current locale to english ones. Initialized when needed
+win32timezone_to_en = {}
 # Map between Windows an Olson timezones taken from http://www.unicode.org/repos/cldr/trunk/common/supplemental/windowsZones.xml
 win32timezones = {"AUS Central Standard Time": "Australia/Darwin", # S (GMT+09:30) Darwin
 "AUS Eastern Standard Time": "Australia/Sydney", # D (GMT+10:00) Canberra, Melbourne, Sydney
