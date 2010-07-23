@@ -156,14 +156,15 @@ def detect_timezone():
   global win32timezone_to_en
   try:
       import win32timezone
-      win32tz_name = win32timezone.TimeZoneInfo.local().timeZoneName
+      # Use the standardName to index as the displayName is set by win32timezones code to "Unknown", and they key_name is unknown
+      win32tz_name = win32timezone.TimeZoneInfo.local().standardName
       if not win32timezone_to_en:
-          win32timezone_to_en = dict(win32timezone.TimeZoneInfo._get_indexed_time_zone_keys())
-      win32timezone_name_en = win32timezone_to_en.get(win32tz_name, win32tz_name)
-      olsen_name = win32tz_map.win32timezones.get(win32timezone_name_en, None)
-      if not olsen_name:
-          raise ValueError(u"Could not map win32 timezone name %s (English %s) to Olsen timezone name" % (win32tz_name, win32timezone_name_en))
-      return pytz.timezone(olsen_name)
+          win32timezone_to_en = dict(win32timezone.TimeZoneInfo._get_indexed_time_zone_keys("Std"))
+      win32tz_name_en = win32timezone_to_en.get(win32tz_name, win32tz_name)
+      olson_name = win32tz_map.win32timezones.get(win32tz_name_en, None)
+      if not olson_name:
+          raise ValueError(u"Could not map win32 timezone name %s (English %s) to Olson timezone name" % (win32tz_name, win32tz_name_en))
+      return pytz.timezone(olson_name)
   except ImportError:
       pass
 
