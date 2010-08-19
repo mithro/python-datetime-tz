@@ -612,6 +612,7 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
                       hour=2, minute=30, second=0, microsecond=0)
 
+
   def testSmartParse(self):
     datetime_tz.localtz_set("Australia/Sydney")
 
@@ -814,17 +815,17 @@ class TestDatetimeTZ(unittest.TestCase):
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST-05:00", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
 
     d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 EST 2009", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
 
     # Test datetime string with timezone information,
     # no more timezone argument
@@ -841,18 +842,61 @@ class TestDatetimeTZ(unittest.TestCase):
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST-05:00")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
 
     d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 EST 2009")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("EST"))
+    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
 
+    # UTC, nice and easy
+    d = datetime_tz.datetime_tz.smartparse("Tue Jul 03 06:00:01 UTC 2010")
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2010-07-03 06:00:01+00:00")
+    self.assertEqual(d.tzinfo, pytz.timezone("UTC"))
+
+    # Try Pacific standard time
+    d = datetime_tz.datetime_tz.smartparse("2002-10-27 01:20:00 EST")
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2002-10-27 01:20:00-05:00")
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+
+    d = datetime_tz.datetime_tz.smartparse("2002-10-27 01:20:00 EDT")
+    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertEqual(str(d), "2002-10-27 01:20:00-04:00")
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+
+    # Using Oslon timezones means you end up with ambigious dates.
+    #   2002-10-27 01:30:00 US/Eastern
+    #  could be either,
+    #   2002-10-27 01:30:00 EDT-0400
+    #   2002-10-27 01:30:00 EST-0500
+    try:
+      d = datetime_tz.datetime_tz.smartparse(
+          "Tue Jul 03 06:00:01 US/Pacific 2010")
+      self.assert_(False)
+    except ValueError:
+      pass
+
+    # Make sure we get exceptions when invalid timezones are used.
+    try:
+      d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 Random 2009")
+      self.assert_(False)
+    except ValueError:
+      pass
+
+    try:
+      d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 XXX 2009")
+      self.assert_(False)
+    except ValueError:
+      pass
+
+    ###########################################################################
     toparse = datetime_tz.datetime_tz(2008, 06, 5)
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y/%m/%d"))
     self.assert_(isinstance(d, datetime_tz.datetime_tz))

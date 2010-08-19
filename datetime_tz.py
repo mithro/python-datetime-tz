@@ -44,6 +44,7 @@ import dateutil.parser
 import dateutil.relativedelta
 import dateutil.tz
 import pytz
+import pytz_abbr
 
 
 try:
@@ -250,36 +251,6 @@ def _detect_timezone_php():
     warnings.warn("We detected multiple matches for the timezone, choosing "
                   "the first %s. (Matches where %s)" % (matches[0], matches))
     return pytz.timezone(matches[0])
-
-
-class _default_tzinfos(object):
-  """Change tzinfos argument in dateutil.parser.parse() to use pytz.timezone.
-
-  For more details, please see:
-  http://labix.org/python-dateutil#head-c0e81a473b647dfa787dc11e8c69557ec2c3ecd2
-  """
-
-  _marker = None
-
-  def __getitem__(self, key, default=_marker):
-    try:
-      return pytz.timezone(key)
-    except KeyError:
-      if default is self._marker:
-        raise KeyError(key)
-      return default
-
-  get = __getitem__
-
-  def has_key(self, key):
-    return key in pytz.all_timezones
-
-  def __iter__(self):
-    for i in pytz.all_timezones:
-      yield i
-
-  def keys(self):
-    return pytz.all_timezones
 
 
 class datetime_tz(datetime.datetime):
@@ -540,27 +511,22 @@ class datetime_tz(datetime.datetime):
     else:
       # Handle strings with normal datetime format, use original case.
       dt = dateutil.parser.parse(toparse, default=default.asdatetime(),
-                                 tzinfos=_default_tzinfos())
+                                 tzinfos=pytz_abbr.tzinfos)
       if dt is None:
         raise ValueError("Was not able to parse date!")
+
+      if dt.tzinfo is pytz_abbr.unknown:
+        dt = dt.replace(tzinfo=None)
 
       if dt.tzinfo is None:
         if tzinfo is None:
           tzinfo = localtz()
         dt = cls(dt, tzinfo)
       else:
-        if isinstance(dt.tzinfo, dateutil.tz.tzoffset):
-          # If the timezone was specified as -5:00 we get back a
-          # dateutil.tz.tzoffset, which we need to convert into a
-          # pytz.FixedOffset format
-
-          # pytz.FixedOffset takes minutes as input
-          # Convert timedelta object dt.utcoffset() into minutes
-          tzinfo = pytz.FixedOffset(dt.utcoffset().days*24*60 +
-                                    dt.utcoffset().seconds/60)
-
-          # Convert dt.tzinfo from dateutil.tz.tzoffset into pytz.FixedOffset
-          dt = dt.replace(tzinfo=tzinfo)
+        if isinstance(dt.tzinfo, pytz_abbr.tzabbr):
+          abbr = dt.tzinfo
+          dt = dt.replace(tzinfo=None)
+          dt = cls(dt, abbr.zone, is_dst=abbr.dst)
 
         dt = cls(dt)
 
