@@ -97,10 +97,11 @@ def localize(dt):
 
     If dt is naive, returns the same datetime with the local timezone
     Else, uses astimezone to convert"""
-    if dt.tzinfo:
-        return dt.astimezone(localtz())
-    tz = localtz()
-    return tz.localize(dt)
+    if not isinstance(dt, datetime_tz):
+        if not dt.tzinfo:
+            return datetime_tz(dt, tzinfo=localtz())
+        dt = datetime_tz(dt)
+    return dt.astimezone(localtz())
 
 def get_naive(dt):
     """Gets a naive datetime from a datetime.
