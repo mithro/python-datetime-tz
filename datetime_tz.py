@@ -770,7 +770,6 @@ def create_win32tz_map(windows_zones_xml):
     map_zones = {}
     zone_comments = {}
     for kind, data, pos in parser:
-        print kind, data
         if kind == genshi.core.START and str(data[0]) == 'mapZone':
             attrs = data[1]
             win32_name, olson_name = attrs.get("other"), attrs.get("type")
