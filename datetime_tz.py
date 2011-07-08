@@ -85,7 +85,7 @@ def _tzinfome(tzinfo):
     try:
       tzinfo = pytz.timezone(tzinfo)
     except AttributeError:
-      raise pytz.UnknownTimeZoneError("Unknown timezone!")
+      raise pytz.UnknownTimeZoneError("Unknown timezone! %s" % tzinfo)
   return tzinfo
 
 
@@ -219,10 +219,13 @@ def _detect_timezone_etc_localtime():
       if len(matches) > 1:
         warning += ("We detected multiple matches for your /etc/localtime. "
                     "(Matches where %s)" % matches)
+        return _tzinfome(matches[0])
       else:
         warning += "We detected no matches for your /etc/localtime."
       warnings.warn(warning)
 
+      # Register /etc/localtime as the timezone loaded.
+      pytz._tzinfo_cache['/etc/localtime'] = localtime
       return localtime
 
 

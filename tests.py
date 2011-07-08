@@ -125,7 +125,7 @@ class TestLocalTimezoneDetection(unittest.TestCase):
     tzinfo = datetime_tz._detect_timezone_etc_timezone()
     self.assertEqual(None, tzinfo)
 
-  def testEtcLocaltimeMethod(self):
+  def testEtcLocaltimeMethodSingleMatch(self):
     def os_path_exists_fake(filename, os_path_exists=os.path.exists):
       if filename == "/etc/localtime":
         return True
@@ -147,13 +147,24 @@ class TestLocalTimezoneDetection(unittest.TestCase):
 
     self.assertEqual(r, pytz.timezone("Australia/Sydney"))
 
-    # Test the multiple matches case
+    # Test the multiple matches case (choose first option)
     self.mocked("pytz.all_timezones", [pytz.timezone("Australia/Sydney"),
                                        pytz.timezone("Australia/Sydney")])
 
     r = datetime_tz._detect_timezone_etc_localtime()
 
-    self.assertNotEqual(r, pytz.timezone("Australia/Sydney"))
+    self.assertEqual(r, pytz.timezone("Australia/Sydney"))
+
+    # Test the no matches case
+    self.mocked("pytz.all_timezones", [])
+
+    r = datetime_tz._detect_timezone_etc_localtime()
+
+    self.assertEqual(r, pytz.timezone("/etc/localtime"))
+
+    # Make sure we can still use the datetime object
+    datetime_tz.datetime_tz.now() + datetime.timedelta(days=60)
+
 
   def testPHPMethod(self):
     # FIXME: Actually test this method sometime in the future.
