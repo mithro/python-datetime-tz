@@ -750,8 +750,9 @@ for methodname in ["__add__", "__radd__", "__rsub__", "__sub__", "combine"]:
 
   # Make sure we have not already got an override for this method
   assert methodname not in datetime_tz.__dict__
-
-  _wrap_method(methodname)
+  # pypy 1.5.0 lacks __rsub__
+  if hasattr(datetime.datetime, methodname):
+      _wrap_method(methodname)
 
 # Global variable for mapping Window timezone names in the current locale to english ones. Initialized when needed
 win32timezone_to_en = {}
