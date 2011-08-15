@@ -50,7 +50,7 @@ from j5.OS import win32tz_map
 try:
   # pylint: disable-msg=C6204
   import functools
-except ImportError, e:
+except ImportError as e:
 
   class functools(object):
     """Fake replacement for a full functools."""
@@ -212,12 +212,12 @@ def _detect_timezone_etc_timezone():
       tz = file("/etc/timezone").read().strip()
       try:
         return pytz.timezone(tz)
-      except (IOError, pytz.UnknownTimeZoneError), ei:
+      except (IOError, pytz.UnknownTimeZoneError) as ei:
         warnings.warn("Your /etc/timezone file references a timezone (%r) that"
                       " is not valid (%r)." % (tz, ei))
 
     # Problem reading the /etc/timezone file
-    except IOError, eo:
+    except IOError as eo:
       warnings.warn("Could not access your /etc/timezone file: %s" % eo)
 
 def _tz_cmp_dict(tz):
