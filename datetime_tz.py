@@ -40,6 +40,7 @@ import os.path
 import re
 import time
 import warnings
+import ctypes
 import dateutil.parser
 import dateutil.relativedelta
 import dateutil.tz
@@ -157,21 +158,24 @@ def detect_timezone():
   global win32timezone_to_en
   try:
       import win32timezone
-      # Try and fetch the key_name for the timezone using GetDynamicTimeZoneInformation. If unsuccessful, use Std
+      # Try and fetch the key_name for the timezone using Get(Dynamic)TimeZoneInformation
       tzi = win32timezone.TimeZoneDefinition()
       kernel32 = ctypes.windll.kernel32
       getter = kernel32.GetTimeZoneInformation
       getter = getattr(kernel32, 'GetDynamicTimeZoneInformation', getter)
+      # code is for daylight savings: 0 means disabled/not defined, 1 means enabled but inactive, 2 means enabled and active
       code = getter(ctypes.byref(tzi))
-      # code is 0 if daylight savings is disabled or not defined
-      #  code is 1 or 2 if daylight savings is enabled, 2 if currently active
-      win32tz_name = tzi.standard_name
-      if not win32timezone_to_en:
-          win32timezone_to_en = dict(win32timezone.TimeZoneInfo._get_indexed_time_zone_keys("Std"))
-      win32tz_name_en = win32timezone_to_en.get(win32tz_name, win32tz_name)
-      olson_name = win32tz_map.win32timezones.get(win32tz_name_en, None)
+      win32tz_key_name = tzi.key_name
+      if not win32tz_key_name:
+          # we're on Windows before Vista/Server 2008 - need to look up the standard_name in the registry
+          # This will not work in some multilingual setups if running in a language other than the operating system default
+          win32tz_name = tzi.standard_name
+          if not win32timezone_to_en:
+              win32timezone_to_en = dict(win32timezone.TimeZoneInfo._get_indexed_time_zone_keys("Std"))
+          win32tz_key_name = win32timezone_to_en.get(win32tz_name, win32tz_name)
+      olson_name = win32tz_map.win32timezones.get(win32tz_key_name, None)
       if not olson_name:
-          raise ValueError(u"Could not map win32 timezone name %s (English %s) to Olson timezone name" % (win32tz_name, win32tz_name_en))
+          raise ValueError(u"Could not map win32 timezone name %s (English %s) to Olson timezone name" % (win32tz_name, win32tz_key_name))
       return pytz.timezone(olson_name)
   except ImportError:
       pass
