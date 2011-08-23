@@ -157,8 +157,15 @@ def detect_timezone():
   global win32timezone_to_en
   try:
       import win32timezone
-      # Use the standardName to index as the displayName is set by win32timezones code to "Unknown", and they key_name is unknown
-      win32tz_name = win32timezone.TimeZoneInfo.local().standardName
+      # Try and fetch the key_name for the timezone using GetDynamicTimeZoneInformation. If unsuccessful, use Std
+      tzi = win32timezone.TimeZoneDefinition()
+      kernel32 = ctypes.windll.kernel32
+      getter = kernel32.GetTimeZoneInformation
+      getter = getattr(kernel32, 'GetDynamicTimeZoneInformation', getter)
+      code = getter(ctypes.byref(tzi))
+      # code is 0 if daylight savings is disabled or not defined
+      #  code is 1 or 2 if daylight savings is enabled, 2 if currently active
+      win32tz_name = tzi.standard_name
       if not win32timezone_to_en:
           win32timezone_to_en = dict(win32timezone.TimeZoneInfo._get_indexed_time_zone_keys("Std"))
       win32tz_name_en = win32timezone_to_en.get(win32tz_name, win32tz_name)
