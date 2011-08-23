@@ -136,6 +136,40 @@ def localtz_set(timezone):
   global _localtz
   _localtz = _tzinfome(timezone)
 
+# The following code is a workaround to GetDynamicTimeZoneInformation not being present in win32timezone
+
+class SYSTEMTIME_c(ctypes.Structure):
+    """ctypes structure for SYSTEMTIME"""
+    _fields_ = [
+        ('year', ctypes.c_ushort),
+        ('month', ctypes.c_ushort),
+        ('day_of_week', ctypes.c_ushort),
+        ('day', ctypes.c_ushort),
+        ('hour', ctypes.c_ushort),
+        ('minute', ctypes.c_ushort),
+        ('second', ctypes.c_ushort),
+        ('millisecond', ctypes.c_ushort),
+    ]
+
+class TZI_c(ctypes.Structure):
+    """ctypes structure for TIME_ZONE_INFORMATION"""
+    _fields_ = [
+            ('bias', ctypes.c_long),
+            ('standard_name', ctypes.c_wchar*32),
+            ('standard_start', SYSTEMTIME_c),
+            ('standard_bias', ctypes.c_long),
+            ('daylight_name', ctypes.c_wchar*32),
+            ('daylight_start', SYSTEMTIME_c),
+            ('daylight_bias', ctypes.c_long),
+    ]
+
+class DTZI_c(ctypes.Structure):
+    """ctypes structure for DYNAMIC_TIME_ZONE_INFORMATION"""
+    _fields_ = TZI_c._fields_ + [
+            ('key_name', ctypes.c_wchar*128),
+            ('dynamic_daylight_time_disabled', ctypes.c_bool),
+    ]
+
 
 def detect_timezone():
   """Try and detect the timezone that Python is currently running in.
@@ -159,7 +193,7 @@ def detect_timezone():
   try:
       import win32timezone
       # Try and fetch the key_name for the timezone using Get(Dynamic)TimeZoneInformation
-      tzi = win32timezone.TimeZoneDefinition()
+      tzi = DTZI_c()
       kernel32 = ctypes.windll.kernel32
       getter = kernel32.GetTimeZoneInformation
       getter = getattr(kernel32, 'GetDynamicTimeZoneInformation', getter)
