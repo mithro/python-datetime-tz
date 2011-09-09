@@ -69,6 +69,8 @@ pytz.utc._utcoffset = datetime.timedelta()
 
 
 timedelta = datetime.timedelta
+# We derive our datetime type from the original datetime type, whether VirtualTime is enabled or not
+# When calling now and utcnow, we use the current versions in the datetime module, which are patched iff VirtualTime is enabled
 original_datetime_type = VirtualTime._original_datetime_type
 
 def _tzinfome(tzinfo):
@@ -365,7 +367,7 @@ class _default_tzinfos(object):
     return pytz.all_timezones
 
 
-class datetime_tz(VirtualTime.datetime):
+class datetime_tz(original_datetime_type):
   """An extension of the inbuilt datetime adding more functionality.
 
   The extra functionality includes:
@@ -647,7 +649,7 @@ class datetime_tz(VirtualTime.datetime):
   @classmethod
   def utcnow(cls):
     """Return a new datetime representing UTC day and time."""
-    obj = VirtualTime.datetime.utcnow()
+    obj = datetime.datetime.utcnow()
     obj = cls(obj, tzinfo=pytz.utc)
     return obj
 
