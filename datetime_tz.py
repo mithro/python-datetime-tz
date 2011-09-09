@@ -34,6 +34,7 @@ try and do the detection.
 __author__ = "tansell@google.com (Tim Ansell)"
 
 import calendar
+from j5.Test import VirtualTime
 import datetime
 import os
 import os.path
@@ -68,7 +69,7 @@ pytz.utc._utcoffset = datetime.timedelta()
 
 
 timedelta = datetime.timedelta
-
+original_datetime_type = VirtualTime._original_datetime_type
 
 def _tzinfome(tzinfo):
   """Gets a tzinfo object from a string.
@@ -364,7 +365,7 @@ class _default_tzinfos(object):
     return pytz.all_timezones
 
 
-class datetime_tz(datetime.datetime):
+class datetime_tz(VirtualTime.datetime):
   """An extension of the inbuilt datetime adding more functionality.
 
   The extra functionality includes:
@@ -386,11 +387,11 @@ class datetime_tz(datetime.datetime):
       tzinfo = _tzinfome(kw.pop("tzinfo"))
 
     # Create a datetime object if we don't have one
-    if isinstance(args[0], datetime.datetime):
+    if isinstance(args[0], original_datetime_type):
       # Convert the datetime instance to a datetime object.
       newargs = (list(args[0].timetuple()[0:6]) +
                  [args[0].microsecond, args[0].tzinfo])
-      dt = datetime.datetime(*newargs)
+      dt = original_datetime_type(*newargs)
 
       if tzinfo is None and dt.tzinfo is None:
         raise TypeError("Must specify a timezone!")
@@ -399,7 +400,7 @@ class datetime_tz(datetime.datetime):
         raise TypeError("Can not give a timezone with timezone aware"
                         " datetime object! (Use localize.)")
     else:
-      dt = datetime.datetime(*args, **kw)
+      dt = original_datetime_type(*args, **kw)
 
     if dt.tzinfo is not None:
       # Re-normalize the dt object
@@ -418,7 +419,7 @@ class datetime_tz(datetime.datetime):
         raise pytz.AmbiguousTimeError("No such time exists!")
 
     newargs = list(dt.timetuple()[0:6])+[dt.microsecond, dt.tzinfo]
-    return datetime.datetime.__new__(cls, *newargs)
+    return original_datetime_type.__new__(cls, *newargs)
 
   def asdatetime(self, naive=True):
     """Return this datetime_tz as a datetime object.
@@ -432,7 +433,7 @@ class datetime_tz(datetime.datetime):
     args = list(self.timetuple()[0:6])+[self.microsecond]
     if not naive:
       args.append(self.tzinfo)
-    return datetime.datetime(*args)
+    return original_datetime_type(*args)
 
   def asdate(self):
     """Return this datetime_tz as a date object.
@@ -491,7 +492,7 @@ class datetime_tz(datetime.datetime):
     if "tzinfo" in kw:
       if kw["tzinfo"] is None:
         raise TypeError("Can not remove the timezone use asdatetime()")
-    return datetime_tz(datetime.datetime.replace(self, **kw))
+    return datetime_tz(original_datetime_type.replace(self, **kw))
 
   # pylint: disable-msg=C6310
   @classmethod
@@ -633,7 +634,7 @@ class datetime_tz(datetime.datetime):
   @classmethod
   def utcfromtimestamp(cls, timestamp):
     """Returns a datetime object of a given timestamp (in UTC)."""
-    obj = datetime.datetime.utcfromtimestamp(timestamp)
+    obj = original_datetime_type.utcfromtimestamp(timestamp)
     obj = pytz.utc.localize(obj)
     return cls(obj)
 
@@ -646,7 +647,7 @@ class datetime_tz(datetime.datetime):
   @classmethod
   def utcnow(cls):
     """Return a new datetime representing UTC day and time."""
-    obj = datetime.datetime.utcnow()
+    obj = VirtualTime.datetime.utcnow()
     obj = cls(obj, tzinfo=pytz.utc)
     return obj
 
@@ -772,20 +773,20 @@ class iterate(object):
 def _wrap_method(name):
   """Wrap a method.
 
-  Patch a method which might return a datetime.datetime to return a
+  Patch a method which might return a original_datetime_type to return a
   datetime_tz.datetime_tz instead.
 
   Args:
     name: The name of the method to patch
   """
-  method = getattr(datetime.datetime, name)
+  method = getattr(original_datetime_type, name)
 
   # Have to give the second argument as method has no __module__ option.
   @functools.wraps(method, ("__name__", "__doc__"), ())
   def wrapper(*args, **kw):
     r = method(*args, **kw)
 
-    if isinstance(r, datetime.datetime) and not isinstance(r, datetime_tz):
+    if isinstance(r, original_datetime_type) and not isinstance(r, datetime_tz):
       r = datetime_tz(r)
     return r
 
@@ -796,7 +797,7 @@ for methodname in ["__add__", "__radd__", "__rsub__", "__sub__", "combine"]:
   # Make sure we have not already got an override for this method
   assert methodname not in datetime_tz.__dict__
   # pypy 1.5.0 lacks __rsub__
-  if hasattr(datetime.datetime, methodname):
+  if hasattr(original_datetime_type, methodname):
       _wrap_method(methodname)
 
 # Global variable for mapping Window timezone names in the current locale to english ones. Initialized when needed
