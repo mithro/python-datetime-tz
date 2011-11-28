@@ -5,12 +5,9 @@ setup(
     version='0.1',
     author='Tim Ansell',
     author_email='mithro@mithis.com',
-    
-    packages=find_packages(),
-    include_package_data=True,
-    
+    packages=['datetime_tz'],
     install_requires=[
-        'python-dateutil',
+        'python-dateutil == 1.5',
         'pytz'
     ]
 )
