@@ -96,7 +96,7 @@ def _tzinfome(tzinfo):
 # Our "local" timezone
 _localtz = None
 
-def localize(dt):
+def localize(dt, force_to_local=True):
     """Localize a datetime to the local timezone
 
     If dt is naive, returns the same datetime with the local timezone
@@ -105,7 +105,9 @@ def localize(dt):
         if not dt.tzinfo:
             return datetime_tz(dt, tzinfo=localtz())
         dt = datetime_tz(dt)
-    return dt.astimezone(localtz())
+    if force_to_local:
+        return dt.astimezone(localtz())
+    return dt
 
 def get_naive(dt):
     """Gets a naive datetime from a datetime.
