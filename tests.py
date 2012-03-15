@@ -908,7 +908,7 @@ class TestDatetimeTZ(unittest.TestCase):
       pass
 
     ###########################################################################
-    toparse = datetime_tz.datetime_tz(2008, 06, 5)
+    toparse = datetime_tz.datetime_tz(2008, 6, 5)
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y/%m/%d"))
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, toparse)
