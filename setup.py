@@ -7,7 +7,7 @@ import sys
 
 data = dict(
     name='python-datetime_tz',
-    version='0.1',
+    version='0.2',
     author='Tim Ansell',
     author_email='mithro@mithis.com',
     packages=['datetime_tz'],
