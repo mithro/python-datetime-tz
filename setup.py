@@ -6,7 +6,7 @@ except ImportError:
 import sys
 
 data = dict(
-    name='python-datetime_tz',
+    name='python-datetime-tz',
     version='0.2',
     author='Tim Ansell',
     author_email='mithro@mithis.com',
