@@ -10,7 +10,19 @@ data = dict(
     version='0.2',
     author='Tim Ansell',
     author_email='mithro@mithis.com',
-    packages=['datetime_tz'],
+    url='http://github.com/mithro/python-datetime-tz',
+    description="""\
+A drop in replacement for Python's datetime module which cares deeply about timezones.
+""",
+    license="License :: OSI Approved :: Apache Software License",
+    classifiers=[
+        "Intended Audience :: Developers",
+        "Development Status :: 4 - Beta",
+        "Programming Language :: Python",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Software Development :: Internationalization",
+    ],
+    packages=['datetime_tz', 'datetime_tz.pytz_abbr'],
     install_requires=['pytz'],
     py_modules=['datetime_tz','datetime_tz.pytz_abbr'],
     test_suite='tests',
