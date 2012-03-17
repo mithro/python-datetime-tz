@@ -12,6 +12,7 @@ data = dict(
     author_email='mithro@mithis.com',
     packages=['datetime_tz'],
     install_requires=['pytz'],
+    test_suite='tests',
 )
 
 if sys.version[:3] < '3.0':
