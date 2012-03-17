@@ -12,7 +12,7 @@ data = dict(
     author_email='mithro@mithis.com',
     packages=['datetime_tz'],
     install_requires=['pytz'],
-    py_modules=['datetime_tz','pytz_abbr'],
+    py_modules=['datetime_tz','datetime_tz.pytz_abbr'],
     test_suite='tests',
 )
 
