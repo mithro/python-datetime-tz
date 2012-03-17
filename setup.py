@@ -15,7 +15,7 @@ data = dict(
 )
 
 if sys.version[:3] < '3.0':
-    data['install_requires'].append('python-dateutil == 1.5')
+    data['install_requires'].append('python-dateutil >= 1.4')
 else:
     data['install_requires'].append('python-dateutil == 2.0')
 
