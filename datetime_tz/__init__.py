@@ -414,12 +414,12 @@ class datetime_tz(datetime.datetime):
     Other valid formats include:
       "now" or "today"
       "yesterday"
-      "tommorrow"
+      "tomorrow"
       "5 minutes ago"
       "10 hours ago"
       "10h5m ago"
       "start of yesterday"
-      "end of tommorrow"
+      "end of tomorrow"
       "end of 3rd of March"
 
     Args:
@@ -471,7 +471,7 @@ class datetime_tz(datetime.datetime):
     elif toparselower == "yesterday":
       dt -= datetime.timedelta(days=1)
 
-    elif toparselower == "tommorrow":
+    elif toparselower == "tomorrow":
       dt += datetime.timedelta(days=1)
 
     elif "ago" in toparselower:

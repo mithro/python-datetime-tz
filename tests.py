@@ -629,7 +629,7 @@ class TestDatetimeTZ(unittest.TestCase):
 
     tz = pytz.timezone("US/Pacific")
     now = datetime_tz.datetime_tz(2008, 12, 5, tzinfo=tz)
-    tommorrow = now+datetime.timedelta(days=1)
+    tomorrow = now+datetime.timedelta(days=1)
 
     @staticmethod
     def now_fake(tzinfo):
@@ -665,9 +665,9 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(d, now-datetime.timedelta(days=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
-    d = datetime_tz.datetime_tz.smartparse("tommorrow", tz)
+    d = datetime_tz.datetime_tz.smartparse("tomorrow", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
-    self.assertEqual(d, tommorrow)
+    self.assertEqual(d, tomorrow)
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("a second ago", tz)
@@ -783,10 +783,10 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(d, now.replace(hour=0, minute=0, second=0, microsecond=0))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
-    d = datetime_tz.datetime_tz.smartparse("start of tommorrow", tz)
+    d = datetime_tz.datetime_tz.smartparse("start of tomorrow", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(
-        d, tommorrow.replace(hour=0, minute=0, second=0, microsecond=0))
+        d, tomorrow.replace(hour=0, minute=0, second=0, microsecond=0))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("start of yesterday", tz)
@@ -797,10 +797,10 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
-    d = datetime_tz.datetime_tz.smartparse("end of tommorrow", tz)
+    d = datetime_tz.datetime_tz.smartparse("end of tomorrow", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(
-        d, tommorrow.replace(
+        d, tomorrow.replace(
             hour=23, minute=59, second=59, microsecond=999999))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
