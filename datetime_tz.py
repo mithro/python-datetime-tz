@@ -141,6 +141,9 @@ def localtz_set(timezone):
   global _localtz
   _localtz = _tzinfome(timezone)
 
+def require_timezone(zone):
+    assert localtz().zone == zone, "Please set your local timezone to %(zone)s (either in the machine, or on Linux by exporting TZ=%(zone)s" % {"zone": zone}
+
 # The following code is a workaround to GetDynamicTimeZoneInformation not being present in win32timezone
 
 class SYSTEMTIME_c(ctypes.Structure):
