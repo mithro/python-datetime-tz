@@ -679,6 +679,31 @@ class datetime_tz(original_datetime_type):
         other = localize(other)
     return super(datetime_tz, self).__eq__(other)
 
+  def __gt__(self, other):
+    if isinstance(other, original_datetime_type) and other.tzinfo is None:
+        other = localize(other)
+    return super(datetime_tz, self).__gt__(other)
+
+  def __ge__(self, other):
+    if isinstance(other, original_datetime_type) and other.tzinfo is None:
+        other = localize(other)
+    return super(datetime_tz, self).__ge__(other)
+
+  def __lt__(self, other):
+    if isinstance(other, original_datetime_type) and other.tzinfo is None:
+        other = localize(other)
+    return super(datetime_tz, self).__lt__(other)
+
+  def __le__(self, other):
+    if isinstance(other, original_datetime_type) and other.tzinfo is None:
+        other = localize(other)
+    return super(datetime_tz, self).__le__(other)
+
+  def __ne__(self, other):
+    if isinstance(other, original_datetime_type) and other.tzinfo is None:
+        other = localize(other)
+    return super(datetime_tz, self).__ne__(other)
+
 class iterate(object):
   """Helpful iterators for working with datetime_tz objects."""
 
