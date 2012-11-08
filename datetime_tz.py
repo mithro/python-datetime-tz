@@ -674,6 +674,11 @@ class datetime_tz(original_datetime_type):
                       "from an ordinal. Please use datetime.date.fromordinal")
 
 
+  def __eq__(self, other):
+    if isinstance(other, original_datetime_type) and other.tzinfo is None:
+        other = localize(other)
+    return super(datetime_tz, self).__eq__(other)
+
 class iterate(object):
   """Helpful iterators for working with datetime_tz objects."""
 
