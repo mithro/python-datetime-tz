@@ -18,3 +18,5 @@ The module also includes extra functionality;
 
 [![Build Status](https://travis-ci.org/mithro/python-datetime-tz.png?branch=master)](https://travis-ci.org/mithro/python-datetime-tz)
 [![Coverage Status](https://coveralls.io/repos/mithro/python-datetime-tz/badge.png)](https://coveralls.io/r/mithro/python-datetime-tz)
+[![PyPi Version](https://crate.io/packages/python-coveralls/)](https://pypip.in/v/python-datetime-tz/badge.png)
+[![PyPi Downloads](https://crate.io/packages/python-coveralls/)](https://pypip.in/d/python-datetime-tz/badge.png)
