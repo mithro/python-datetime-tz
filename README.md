@@ -16,4 +16,5 @@ The module also includes extra functionality;
     * Proper support for going to/from Unix timestamps (which are in UTC!).
     * Smart Parsing which attempts to accept all formats.
 
-
+[![Build Status](https://travis-ci.org/mithro/python-datetime-tz.png?branch=master)](https://travis-ci.org/mithro/python-datetime-tz)
+[![Coverage Status](https://coveralls.io/repos/mithro/python-datetime-tz/badge.png)](https://coveralls.io/r/mithro/python-datetime-tz)
