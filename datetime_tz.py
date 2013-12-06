@@ -428,6 +428,9 @@ class datetime_tz(original_datetime_type):
     newargs = list(dt.timetuple()[0:6])+[dt.microsecond, dt.tzinfo]
     return original_datetime_type.__new__(cls, *newargs)
 
+  def __copy__(self):
+    return datetime_tz(self)
+
   def __deepcopy__(self, memo):
     dpcpy = datetime_tz(self)
     memo[id(self)] = dpcpy
