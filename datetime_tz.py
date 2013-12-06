@@ -47,7 +47,7 @@ import dateutil.relativedelta
 import dateutil.tz
 import pytz
 from j5.OS import win32tz_map
-
+import copy
 
 try:
   # pylint: disable-msg=C6204
@@ -427,6 +427,11 @@ class datetime_tz(original_datetime_type):
 
     newargs = list(dt.timetuple()[0:6])+[dt.microsecond, dt.tzinfo]
     return original_datetime_type.__new__(cls, *newargs)
+
+  def __deepcopy__(self, memo):
+    dpcpy = datetime_tz(self)
+    memo[id(self)] = dpcpy
+    return dpcpy
 
   def asdatetime(self, naive=True):
     """Return this datetime_tz as a datetime object.
