@@ -443,15 +443,6 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assert_(isinstance(dreplace, datetime_tz.datetime_tz))
 
     try:
-      # Make sure the wrapped functions still look like the original functions
-      self.assertEqual(dreplace.combine.__name__,
-                       datetime.datetime.combine.__name__)
-      self.assertEqual(dreplace.combine.__doc__,
-                       datetime.datetime.combine.__doc__)
-    except ImportError:
-      pass
-
-    try:
       dreplace = datetime_tz.datetime_tz.now()
       dreplace = dreplace.replace(days=1)
 
