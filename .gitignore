@@ -2,3 +2,4 @@ build
 dist
 *.egg-info
 *.py[co]
+docs/_*
