@@ -563,12 +563,24 @@ class datetime_tz(datetime.datetime):
       tzinfo = localtz()
     return obj.astimezone(tzinfo)
 
+  @classmethod
+  def combine(cls, date, time, tzinfo=None):
+    """date, time, [tz] -> datetime with same date and time fields."""
+    if tzinfo is None:
+      tzinfo = localtz()
+    return datetime_tz(datetime.datetime.combine(date, time), tzinfo)
+
   today = now
 
   @staticmethod
   def fromordinal(ordinal):
     raise SyntaxError("Not enough information to create a datetime_tz object "
                       "from an ordinal. Please use datetime.date.fromordinal")
+
+
+# We can't use datetime's absolute min/max otherwise astimezone will fail.
+datetime_tz.min = datetime_tz(datetime.datetime.min+datetime.timedelta(days=2), pytz.utc)
+datetime_tz.max = datetime_tz(datetime.datetime.max-datetime.timedelta(days=2), pytz.utc)
 
 
 class iterate(object):
@@ -696,7 +708,7 @@ def _wrap_method(name):
 
   setattr(datetime_tz, name, wrapper)
 
-for methodname in ["__add__", "__radd__", "__rsub__", "__sub__", "combine"]:
+for methodname in ["__add__", "__radd__", "__rsub__", "__sub__"]:
 
   # Make sure we have not already got an override for this method
   assert methodname not in datetime_tz.__dict__
