@@ -89,7 +89,7 @@ def _tzinfome(tzinfo):
     try:
       tzinfo = pytz.timezone(tzinfo)
     except AttributeError:
-      raise pytz.UnknownTimeZoneError("Unknown timezone!")
+      raise pytz.UnknownTimeZoneError("Unknown timezone! %s" % tzinfo)
   return tzinfo
 
 
@@ -312,6 +312,8 @@ def _detect_timezone_etc_localtime():
         warning += "We detected no matches for your /etc/localtime."
       warnings.warn(warning)
 
+      #Register /etc/localtime as the timezone loaded.
+      pytz._tzinfo_cache['/etc/localtime'] = localtime
       return localtime
 
 
@@ -380,6 +382,7 @@ class datetime_tz(original_datetime_type):
     * Full integration with pytz (just give it the string of the timezone!)
     * Proper support for going to/from Unix timestamps (which are in UTC!).
   """
+  __slots__ = ["is_dst"]
 
   def __new__(cls, *args, **kw):
     args = list(args)
@@ -412,21 +415,27 @@ class datetime_tz(original_datetime_type):
     if dt.tzinfo is not None:
       # Re-normalize the dt object
       dt = dt.tzinfo.normalize(dt)
+
     else:
       if tzinfo is None:
         tzinfo = localtz()
 
-      is_dst = None
-      if "is_dst" in kw:
-        is_dst = kw.pop("is_dst")
-
       try:
-        dt = tzinfo.localize(dt, is_dst)
-      except IndexError:
-        raise pytz.AmbiguousTimeError("No such time exists!")
+        dt = tzinfo.localize(dt, is_dst=None)
+      except pytz.AmbiguousTimeError:
+        is_dst = None
+        if "is_dst" in kw:
+          is_dst = kw.pop("is_dst")
+
+        try:
+          dt = tzinfo.localize(dt, is_dst)
+        except IndexError:
+          raise pytz.AmbiguousTimeError("No such time exists!")
 
     newargs = list(dt.timetuple()[0:6])+[dt.microsecond, dt.tzinfo]
-    return original_datetime_type.__new__(cls, *newargs)
+    obj = original_datetime_type.__new__(cls, *newargs)
+    obj.is_dst = obj.dst() != datetime.timedelta(0)
+    return obj
 
   def __copy__(self):
     return datetime_tz(self)
@@ -507,7 +516,18 @@ class datetime_tz(original_datetime_type):
     if "tzinfo" in kw:
       if kw["tzinfo"] is None:
         raise TypeError("Can not remove the timezone use asdatetime()")
-    return datetime_tz(original_datetime_type.replace(self, **kw))
+
+    is_dst = None
+    if "is_dst" in kw:
+      is_dst = kw["is_dst"]
+      del kw["is_dst"]
+    else:
+      # Use our own DST setting..
+      is_dst = self.is_dst
+
+    replaced = self.asdatetime().replace(**kw)
+
+    return datetime_tz(replaced, tzinfo=self.tzinfo.zone, is_dst=is_dst)
 
   # pylint: disable-msg=C6310
   @classmethod
