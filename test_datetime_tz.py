@@ -117,6 +117,8 @@ class TestDST():
             a = func(*args, **kwargs)
         except exc as e:
             pass
+        if should_work is None:
+            return True # We don't care either way, but we need to still raise other Exceptions
         return not (a is None) == should_work
 
     def setup(self):
