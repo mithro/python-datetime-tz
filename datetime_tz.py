@@ -516,6 +516,11 @@ class datetime_tz(original_datetime_type):
     if "tzinfo" in kw:
       if kw["tzinfo"] is None:
         raise TypeError("Can not remove the timezone use asdatetime()")
+      else:
+        tzinfo = kw['tzinfo']
+        del kw['tzinfo']
+    else:
+      tzinfo = None
 
     is_dst = None
     if "is_dst" in kw:
@@ -527,7 +532,7 @@ class datetime_tz(original_datetime_type):
 
     replaced = self.asdatetime().replace(**kw)
 
-    return datetime_tz(replaced, tzinfo=self.tzinfo.zone, is_dst=is_dst)
+    return datetime_tz(replaced, tzinfo=tzinfo or self.tzinfo.zone, is_dst=is_dst)
 
   # pylint: disable-msg=C6310
   @classmethod
