@@ -341,6 +341,7 @@ def _detect_timezone_php():
   if len(matches) > 1:
     warnings.warn("We detected multiple matches for the timezone, choosing "
                   "the first %s. (Matches where %s)" % (matches[0], matches))
+  if matches:
     return pytz.timezone(matches[0])
 
 
