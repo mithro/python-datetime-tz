@@ -877,8 +877,6 @@ for methodname in ["__add__", "__radd__", "__rsub__", "__sub__"]:
   if hasattr(original_datetime_type, methodname):
       _wrap_method(methodname)
 
-  _wrap_method(methodname)
-
 # Global variable for mapping Window timezone names in the current locale to english ones. Initialized when needed
 win32timezone_to_en = {}
 
