@@ -46,8 +46,8 @@ import dateutil.parser
 import dateutil.relativedelta
 import dateutil.tz
 import pytz
-from j5.OS import win32tz_map
-import copy
+import win32tz_map
+import pytz_abbr
 
 try:
   # pylint: disable-msg=C6204
@@ -312,7 +312,7 @@ def _detect_timezone_etc_localtime():
         warning += "We detected no matches for your /etc/localtime."
       warnings.warn(warning)
 
-      #Register /etc/localtime as the timezone loaded.
+      # Register /etc/localtime as the timezone loaded.
       pytz._tzinfo_cache['/etc/localtime'] = localtime
       return localtime
 
@@ -546,12 +546,12 @@ class datetime_tz(original_datetime_type):
     Other valid formats include:
       "now" or "today"
       "yesterday"
-      "tommorrow"
+      "tomorrow"
       "5 minutes ago"
       "10 hours ago"
       "10h5m ago"
       "start of yesterday"
-      "end of tommorrow"
+      "end of tomorrow"
       "end of 3rd of March"
 
     Args:
@@ -603,7 +603,7 @@ class datetime_tz(original_datetime_type):
     elif toparselower == "yesterday":
       dt -= datetime.timedelta(days=1)
 
-    elif toparselower == "tommorrow":
+    elif toparselower == "tomorrow":
       dt += datetime.timedelta(days=1)
 
     elif "ago" in toparselower:
@@ -646,27 +646,22 @@ class datetime_tz(original_datetime_type):
     else:
       # Handle strings with normal datetime format, use original case.
       dt = dateutil.parser.parse(toparse, default=default.asdatetime(),
-                                 tzinfos=_default_tzinfos())
+                                 tzinfos=pytz_abbr.tzinfos)
       if dt is None:
         raise ValueError("Was not able to parse date!")
+
+      if dt.tzinfo is pytz_abbr.unknown:
+        dt = dt.replace(tzinfo=None)
 
       if dt.tzinfo is None:
         if tzinfo is None:
           tzinfo = localtz()
         dt = cls(dt, tzinfo)
       else:
-        if isinstance(dt.tzinfo, dateutil.tz.tzoffset):
-          # If the timezone was specified as -5:00 we get back a
-          # dateutil.tz.tzoffset, which we need to convert into a
-          # pytz.FixedOffset format
-
-          # pytz.FixedOffset takes minutes as input
-          # Convert timedelta object dt.utcoffset() into minutes
-          tzinfo = pytz.FixedOffset(dt.utcoffset().days*24*60 +
-                                    dt.utcoffset().seconds/60)
-
-          # Convert dt.tzinfo from dateutil.tz.tzoffset into pytz.FixedOffset
-          dt = dt.replace(tzinfo=tzinfo)
+        if isinstance(dt.tzinfo, pytz_abbr.tzabbr):
+          abbr = dt.tzinfo
+          dt = dt.replace(tzinfo=None)
+          dt = cls(dt, abbr.zone, is_dst=abbr.dst)
 
         dt = cls(dt)
 
@@ -699,6 +694,13 @@ class datetime_tz(original_datetime_type):
     if tzinfo is None:
       tzinfo = localtz()
     return obj.astimezone(tzinfo)
+
+  @classmethod
+  def combine(cls, date, time, tzinfo=None):
+    """date, time, [tz] -> datetime with same date and time fields."""
+    if tzinfo is None:
+      tzinfo = localtz()
+    return datetime_tz(datetime.datetime.combine(date, time), tzinfo)
 
   today = now
 
@@ -737,6 +739,10 @@ class datetime_tz(original_datetime_type):
     if isinstance(other, original_datetime_type) and other.tzinfo is None:
         other = localize(other)
     return super(datetime_tz, self).__ne__(other)
+
+# We can't use datetime's absolute min/max otherwise astimezone will fail.
+datetime_tz.min = datetime_tz(datetime.datetime.min+datetime.timedelta(days=2), pytz.utc)
+datetime_tz.max = datetime_tz(datetime.datetime.max-datetime.timedelta(days=2), pytz.utc)
 
 class iterate(object):
   """Helpful iterators for working with datetime_tz objects."""
@@ -863,13 +869,15 @@ def _wrap_method(name):
 
   setattr(datetime_tz, name, wrapper)
 
-for methodname in ["__add__", "__radd__", "__rsub__", "__sub__", "combine"]:
+for methodname in ["__add__", "__radd__", "__rsub__", "__sub__"]:
 
   # Make sure we have not already got an override for this method
   assert methodname not in datetime_tz.__dict__
   # pypy 1.5.0 lacks __rsub__
   if hasattr(original_datetime_type, methodname):
       _wrap_method(methodname)
+
+  _wrap_method(methodname)
 
 # Global variable for mapping Window timezone names in the current locale to english ones. Initialized when needed
 win32timezone_to_en = {}
@@ -926,3 +934,7 @@ def update_stored_win32tz_map():
     map_file.close()
     return True
 
+__all__ = ['datetime_tz', 'detect_timezone', 'iterate', 'localtz',
+    'localtz_set', 'timedelta', '_detect_timezone_environ',
+    '_detect_timezone_etc_localtime', '_detect_timezone_etc_timezone',
+    '_detect_timezone_php']
