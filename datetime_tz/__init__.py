@@ -606,6 +606,10 @@ class datetime_tz(original_datetime_type):
     elif toparselower == "tomorrow":
       dt += datetime.timedelta(days=1)
 
+    elif toparselower == "tommorrow":
+      #This is spelt wrong, but code out there might be depending on it working
+      dt += datetime.timedelta(days=1)
+
     elif "ago" in toparselower:
       # Remove the "ago" bit
       toparselower = toparselower[:-3]
