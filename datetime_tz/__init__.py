@@ -710,37 +710,6 @@ class datetime_tz(datetime.datetime):
     raise SyntaxError("Not enough information to create a datetime_tz object "
                       "from an ordinal. Please use datetime.date.fromordinal")
 
-
-  def __eq__(self, other):
-    if isinstance(other, original_datetime_type) and other.tzinfo is None:
-        other = localize(other)
-    return super(datetime_tz, self).__eq__(other)
-
-  def __gt__(self, other):
-    if isinstance(other, original_datetime_type) and other.tzinfo is None:
-        other = localize(other)
-    return super(datetime_tz, self).__gt__(other)
-
-  def __ge__(self, other):
-    if isinstance(other, original_datetime_type) and other.tzinfo is None:
-        other = localize(other)
-    return super(datetime_tz, self).__ge__(other)
-
-  def __lt__(self, other):
-    if isinstance(other, original_datetime_type) and other.tzinfo is None:
-        other = localize(other)
-    return super(datetime_tz, self).__lt__(other)
-
-  def __le__(self, other):
-    if isinstance(other, original_datetime_type) and other.tzinfo is None:
-        other = localize(other)
-    return super(datetime_tz, self).__le__(other)
-
-  def __ne__(self, other):
-    if isinstance(other, original_datetime_type) and other.tzinfo is None:
-        other = localize(other)
-    return super(datetime_tz, self).__ne__(other)
-
 # We can't use datetime's absolute min/max otherwise astimezone will fail.
 datetime_tz.min = datetime_tz(datetime.datetime.min+datetime.timedelta(days=2), pytz.utc)
 datetime_tz.max = datetime_tz(datetime.datetime.max-datetime.timedelta(days=2), pytz.utc)
