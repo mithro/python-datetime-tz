@@ -905,4 +905,4 @@ def update_stored_win32tz_map():
 __all__ = ['datetime_tz', 'detect_timezone', 'iterate', 'localtz',
     'localtz_set', 'timedelta', '_detect_timezone_environ',
     '_detect_timezone_etc_localtime', '_detect_timezone_etc_timezone',
-    '_detect_timezone_php']
+    '_detect_timezone_php', 'localize', 'get_naive', 'localtz_name', 'require_timezone']
