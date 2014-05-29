@@ -438,10 +438,10 @@ class datetime_tz(datetime.datetime):
     return obj
 
   def __copy__(self):
-    return datetime_tz(self)
+    return type(self)(self)
 
   def __deepcopy__(self, memo):
-    dpcpy = datetime_tz(self)
+    dpcpy = type(self)(self)
     memo[id(self)] = dpcpy
     return dpcpy
 
@@ -493,7 +493,7 @@ class datetime_tz(datetime.datetime):
     tzinfo = _tzinfome(tzinfo)
 
     d = self.asdatetime(naive=False).astimezone(tzinfo)
-    return datetime_tz(d)
+    return type(self)(d)
 
   # pylint: disable-msg=C6113
   def replace(self, **kw):
@@ -532,7 +532,7 @@ class datetime_tz(datetime.datetime):
 
     replaced = self.asdatetime().replace(**kw)
 
-    return datetime_tz(replaced, tzinfo=tzinfo or self.tzinfo.zone, is_dst=is_dst)
+    return type(self)(replaced, tzinfo=tzinfo or self.tzinfo.zone, is_dst=is_dst)
 
   # pylint: disable-msg=C6310
   @classmethod
@@ -703,7 +703,7 @@ class datetime_tz(datetime.datetime):
     """date, time, [tz] -> datetime with same date and time fields."""
     if tzinfo is None:
       tzinfo = localtz()
-    return datetime_tz(datetime.datetime.combine(date, time), tzinfo)
+    return cls(datetime.datetime.combine(date, time), tzinfo)
 
   today = now
 
@@ -832,11 +832,11 @@ def _wrap_method(name):
 
   # Have to give the second argument as method has no __module__ option.
   @functools.wraps(method, ("__name__", "__doc__"), ())
-  def wrapper(*args, **kw):
-    r = method(*args, **kw)
+  def wrapper(self, *args, **kw):
+    r = method(self, *args, **kw)
 
-    if isinstance(r, datetime.datetime) and not isinstance(r, datetime_tz):
-      r = datetime_tz(r)
+    if isinstance(r, datetime.datetime) and not isinstance(r, type(self)):
+      r = type(self)(r)
     return r
 
   setattr(datetime_tz, name, wrapper)
