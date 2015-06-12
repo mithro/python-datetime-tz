@@ -68,7 +68,6 @@ for release in sorted(releases):
   print("="*75)
   subprocess.check_call("""\
 pip install \
-    --use-mirrors \
     --download %s \
     --download-cache %s \
     pytz==%s
@@ -92,7 +91,6 @@ for release in sorted(releases):
   print("Installing...")
   subprocess.check_call("""\
 pip install \
-    --use-mirrors \
     --force-reinstall \
     --download-cache %s \
     pytz==%s
