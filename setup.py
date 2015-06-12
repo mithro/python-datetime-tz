@@ -42,7 +42,7 @@ A drop in replacement for Python's datetime module which cares deeply about time
         "Topic :: Software Development :: Internationalization",
     ],
     packages=['datetime_tz'],
-    install_requires=['pytz'],
+    install_requires=['pytz >= 2007g'],
     py_modules=['datetime_tz','datetime_tz.pytz_abbr'],
     test_suite='tests',
 )
