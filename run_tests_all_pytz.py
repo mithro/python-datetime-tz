@@ -46,6 +46,7 @@ modify the install version of things.
 CACHE_DIR = os.path.expanduser(os.path.join('~', '.cache', 'pypi'))
 if not os.path.exists(CACHE_DIR):
   os.makedirs(CACHE_DIR)
+print("Using a download cache directory of", repr(CACHE_DIR))
 
 # Get the pytz versions from pypi
 pypi_data_raw = urllib.urlopen('https://pypi.python.org/pypi/pytz/json').read()
