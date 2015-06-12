@@ -33,7 +33,11 @@ import os
 import os.path
 import subprocess
 import sys
-import urllib
+
+try:
+  from urllib.request import urlopen
+except ImportError:
+  from urllib import urlopen
 
 # pylint: disable=g-import-not-at-top
 try:
@@ -55,7 +59,7 @@ if not os.path.exists(CACHE_DIR):
 print("Using a download cache directory of", repr(CACHE_DIR))
 
 # Get the pytz versions from pypi
-pypi_data_raw = urllib.urlopen("https://pypi.python.org/pypi/pytz/json").read()
+pypi_data_raw = urlopen("https://pypi.python.org/pypi/pytz/json").read().decode('utf-8')
 pypi_data = simplejson.loads(pypi_data_raw)
 
 
@@ -64,12 +68,20 @@ def mangle_release(rel):
   if rel < "2007g":
     return None
 
+  # pytz is only supported on Python 3 from version 2011b.
+  if sys.version[:3] >= "3.0" and rel < "2011g":
+    return None
+
   if rel.endswith("r"):
     return rel[:-1]+".post0"
   return rel
 
-
 releases = pypi_data["releases"]
+for release in sorted(releases):
+  print(release)
+  for f in releases[release]:
+    print(f['python_version'])
+
 # Download the pytz versions into the cache.
 for release in sorted(releases):
   # These lines shouldn't be needed but pypi always runs setup.py even when

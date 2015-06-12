@@ -46,13 +46,20 @@ import dateutil.parser
 import dateutil.relativedelta
 import dateutil.tz
 import pytz
-import pytz_abbr
+
+from . import pytz_abbr
+
+
+try:
+  basestring
+except NameError:
+  basestring = str
 
 
 try:
   # pylint: disable=g-import-not-at-top
   import functools
-except ImportError, e:
+except ImportError:
 
   class functools(object):
     """Fake replacement for a full functools."""
@@ -172,15 +179,15 @@ def _detect_timezone_environ():
 def _detect_timezone_etc_timezone():
   if os.path.exists("/etc/timezone"):
     try:
-      tz = file("/etc/timezone").read().strip()
+      tz = open("/etc/timezone").read().strip()
       try:
         return pytz.timezone(tz)
-      except (IOError, pytz.UnknownTimeZoneError), ei:
+      except (IOError, pytz.UnknownTimeZoneError) as ei:
         warnings.warn("Your /etc/timezone file references a timezone (%r) that"
                       " is not valid (%r)." % (tz, ei))
 
     # Problem reading the /etc/timezone file
-    except IOError, eo:
+    except IOError as eo:
       warnings.warn("Could not access your /etc/timezone file: %s" % eo)
 
 
@@ -193,12 +200,10 @@ def _load_local_tzinfo():
       filepath = os.path.join(dirpath, filename)
       name = os.path.relpath(filepath, tzdir)
 
-      try:
-        tzinfo = pytz.tzfile.build_tzinfo(name, file(filepath))
-        localtzdata[name] = tzinfo
-      # pylint: disable=broad-except
-      except Exception, e:
-        warnings.warn(e)
+      f = open(filepath, "rb")
+      tzinfo = pytz.tzfile.build_tzinfo(name, f)
+      f.close()
+      localtzdata[name] = tzinfo
 
   return localtzdata
 
@@ -206,8 +211,9 @@ def _load_local_tzinfo():
 def _detect_timezone_etc_localtime():
   matches = []
   if os.path.exists("/etc/localtime"):
-    localtime = pytz.tzfile.build_tzinfo("/etc/localtime",
-                                         file("/etc/localtime"))
+    f = open("/etc/localtime", "rb")
+    localtime = pytz.tzfile.build_tzinfo("/etc/localtime", f)
+    f.close()
 
     # We want to match against the local database because /etc/localtime will
     # be copied from that. Once we have found a name for /etc/localtime, we can
@@ -250,6 +256,8 @@ def _detect_timezone_etc_localtime():
           continue
 
         matches.append(_tzinfome(tzname))
+
+    matches.sort(key=lambda x: x.zone)
 
     if len(matches) == 1:
       return matches[0]

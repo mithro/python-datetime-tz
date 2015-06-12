@@ -103,7 +103,7 @@ def tzinfos_create(use_region):
           pass
         return result
       else:
-        raise ValueError, "Unknown timezone found %s" % abbr
+        raise ValueError("Unknown timezone found %s" % abbr)
     if offset == 0:
       return pytz.utc
     if offset:

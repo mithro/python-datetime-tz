@@ -42,14 +42,16 @@ A drop in replacement for Python's datetime module which cares deeply about time
         "Topic :: Software Development :: Internationalization",
     ],
     packages=['datetime_tz'],
-    install_requires=['pytz >= 2007g'],
+    install_requires=[],
     py_modules=['datetime_tz','datetime_tz.pytz_abbr'],
     test_suite='tests',
 )
 
 if sys.version[:3] < '3.0':
+    data['install_requires'].append('pytz >= 2007g')
     data['install_requires'].append('python-dateutil >= 1.4, < 2.0')
 else:
-    data['install_requires'].append('python-dateutil == 2.0')
+    data['install_requires'].append('pytz >= 2011g')
+    data['install_requires'].append('python-dateutil >= 2.0')
 
 setup(**data)
