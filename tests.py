@@ -874,26 +874,25 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(-300))
+    self.assertEqual(d, pytz.FixedOffset(-300).localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00+0800", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00+08:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(480))
-
-    d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
-    self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d, pytz.FixedOffset(480).localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST-05:00", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 EST 2009", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     # Test datetime string with timezone information,
     # no more timezone argument
@@ -901,26 +900,31 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(-300))
+    self.assertEqual(d, pytz.FixedOffset(-300).localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00+0800")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00+08:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(480))
+    self.assertEqual(d, pytz.FixedOffset(480).localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST-05:00")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 EST 2009")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     # UTC, nice and easy
     d = datetime_tz.datetime_tz.smartparse("Tue Jul 03 06:00:01 UTC 2010")
