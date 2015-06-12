@@ -188,7 +188,7 @@ def _load_local_tzinfo():
   tzdir = os.environ.get("TZDIR", "/usr/share/zoneinfo/posix")
 
   localtzdata = {}
-  for dirpath, dirnames, filenames in os.walk(tzdir):
+  for dirpath, _, filenames in os.walk(tzdir):
     for filename in filenames:
       filepath = os.path.join(dirpath, filename)
       name = os.path.relpath(filepath, tzdir)
@@ -196,6 +196,7 @@ def _load_local_tzinfo():
       try:
         tzinfo = pytz.tzfile.build_tzinfo(name, file(filepath))
         localtzdata[name] = tzinfo
+      # pylint: disable=broad-except
       except Exception, e:
         warnings.warn(e)
 
@@ -261,7 +262,7 @@ def _detect_timezone_etc_localtime():
       warnings.warn("We detected no matches for your /etc/localtime.")
 
     # Register /etc/localtime as the timezone loaded.
-    pytz._tzinfo_cache['/etc/localtime'] = localtime
+    pytz._tzinfo_cache["/etc/localtime"] = localtime
     return localtime
 
 
@@ -617,8 +618,10 @@ class datetime_tz(datetime.datetime):
 
 
 # We can't use datetime's absolute min/max otherwise astimezone will fail.
-datetime_tz.min = datetime_tz(datetime.datetime.min+datetime.timedelta(days=2), pytz.utc)
-datetime_tz.max = datetime_tz(datetime.datetime.max-datetime.timedelta(days=2), pytz.utc)
+datetime_tz.min = datetime_tz(
+    datetime.datetime.min+datetime.timedelta(days=2), pytz.utc)
+datetime_tz.max = datetime_tz(
+    datetime.datetime.max-datetime.timedelta(days=2), pytz.utc)
 
 
 class iterate(object):
@@ -754,7 +757,8 @@ for methodname in ["__add__", "__radd__", "__rsub__", "__sub__"]:
   _wrap_method(methodname)
 
 
-__all__ = ['datetime_tz', 'detect_timezone', 'iterate', 'localtz',
-    'localtz_set', 'timedelta', '_detect_timezone_environ',
-    '_detect_timezone_etc_localtime', '_detect_timezone_etc_timezone',
-    '_detect_timezone_php']
+__all__ = [
+    "datetime_tz", "detect_timezone", "iterate", "localtz",
+    "localtz_set", "timedelta", "_detect_timezone_environ",
+    "_detect_timezone_etc_localtime", "_detect_timezone_etc_timezone",
+    "_detect_timezone_php"]
