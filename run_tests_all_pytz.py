@@ -81,11 +81,6 @@ def mangle_release(rel):
   return rel
 
 releases = pypi_data["releases"]
-for release in sorted(releases):
-  print(release)
-  for f in releases[release]:
-    print(f["python_version"])
-
 # Download the pytz versions into the cache.
 for release in sorted(releases):
   # These lines shouldn't be needed but pypi always runs setup.py even when
