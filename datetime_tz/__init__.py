@@ -19,7 +19,7 @@
 
 # Disable the invalid name warning as we are inheriting from a standard library
 # object.
-# pylint: disable-msg=C6409,W0212
+# pylint: disable=invalid-name,protected-access
 
 """A version of the datetime module which *cares* about timezones.
 
@@ -50,14 +50,14 @@ import pytz_abbr
 
 
 try:
-  # pylint: disable-msg=C6204
+  # pylint: disable=g-import-not-at-top
   import functools
 except ImportError, e:
 
   class functools(object):
     """Fake replacement for a full functools."""
 
-    # pylint: disable-msg=W0613
+    # pylint: disable=unused-argument
     @staticmethod
     def wraps(f, *args, **kw):
       return f
@@ -102,7 +102,7 @@ def localtz():
   Returns:
     The localtime timezone as a tzinfo object.
   """
-  # pylint: disable-msg=W0603
+  # pylint: disable=global-statement
   global _localtz
   if _localtz is None:
     _localtz = detect_timezone()
@@ -111,7 +111,7 @@ def localtz():
 
 def localtz_set(timezone):
   """Set the local timezone."""
-  # pylint: disable-msg=W0603
+  # pylint: disable=global-statement
   global _localtz
   _localtz = _tzinfome(timezone)
 
@@ -282,7 +282,7 @@ def _detect_timezone_php():
       if tomatch == (tz._tzname, -tz._utcoffset.seconds, indst):
         matches.append(tzname)
 
-    # pylint: disable-msg=W0704
+    # pylint: disable=pointless-except
     except AttributeError:
       pass
 
@@ -405,7 +405,7 @@ class datetime_tz(datetime.datetime):
     d = self.asdatetime(naive=False).astimezone(tzinfo)
     return datetime_tz(d)
 
-  # pylint: disable-msg=C6113
+  # pylint: disable=g-doc-args
   def replace(self, **kw):
     """Return datetime with new specified fields given as arguments.
 
@@ -439,7 +439,7 @@ class datetime_tz(datetime.datetime):
 
     return datetime_tz(replaced, tzinfo=self.tzinfo.zone, is_dst=is_dst)
 
-  # pylint: disable-msg=C6310
+  # pylint: disable=line-to-long
   @classmethod
   def smartparse(cls, toparse, tzinfo=None):
     """Method which uses dateutil.parse and extras to try and parse the string.
@@ -599,6 +599,7 @@ class datetime_tz(datetime.datetime):
       tzinfo = localtz()
     return obj.astimezone(tzinfo)
 
+  # pylint: disable=redefined-outer-name
   @classmethod
   def combine(cls, date, time, tzinfo=None):
     """date, time, [tz] -> datetime with same date and time fields."""
@@ -608,6 +609,7 @@ class datetime_tz(datetime.datetime):
 
   today = now
 
+  # pylint: disable=unused-argument
   @staticmethod
   def fromordinal(ordinal):
     raise SyntaxError("Not enough information to create a datetime_tz object "
