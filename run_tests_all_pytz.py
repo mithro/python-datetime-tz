@@ -31,7 +31,6 @@ except ImportError:
 import glob
 import os
 import os.path
-import pprint
 import subprocess
 import sys
 import urllib
@@ -119,10 +118,10 @@ pip install \
   print("="*75)
 
 print("Tests passed on pytz versions:")
-pprint.pprint(success)
+print(success)
 print()
 print("Tests failed on pytz versions:")
-pprint.pprint(failures)
+print(failures)
 print("="*75)
 
 if len(failures) > 0:
