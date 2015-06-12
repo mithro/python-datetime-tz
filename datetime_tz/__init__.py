@@ -47,12 +47,13 @@ import dateutil.relativedelta
 import dateutil.tz
 import pytz
 
-from . import pytz_abbr
 
+from . import pytz_abbr  # pylint: disable=g-bad-import-order
 
 try:
   basestring
 except NameError:
+  # pylint: disable=redefined-builtin
   basestring = str
 
 

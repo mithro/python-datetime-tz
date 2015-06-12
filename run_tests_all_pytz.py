@@ -35,14 +35,17 @@ import subprocess
 import sys
 
 try:
+  # pylint: disable=g-import-not-at-top
   from urllib.request import urlopen
 except ImportError:
+  # pylint: disable=g-import-not-at-top
   from urllib import urlopen
 
-# pylint: disable=g-import-not-at-top
 try:
+  # pylint: disable=g-import-not-at-top
   import simplejson
 except ImportError:
+  # pylint: disable=g-import-not-at-top
   import json as simplejson
 
 
@@ -59,7 +62,8 @@ if not os.path.exists(CACHE_DIR):
 print("Using a download cache directory of", repr(CACHE_DIR))
 
 # Get the pytz versions from pypi
-pypi_data_raw = urlopen("https://pypi.python.org/pypi/pytz/json").read().decode('utf-8')
+pypi_data_raw = urlopen(
+    "https://pypi.python.org/pypi/pytz/json").read().decode("utf-8")
 pypi_data = simplejson.loads(pypi_data_raw)
 
 
@@ -80,7 +84,7 @@ releases = pypi_data["releases"]
 for release in sorted(releases):
   print(release)
   for f in releases[release]:
-    print(f['python_version'])
+    print(f["python_version"])
 
 # Download the pytz versions into the cache.
 for release in sorted(releases):

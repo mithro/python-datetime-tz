@@ -47,14 +47,18 @@ import pytz
 import datetime_tz
 
 try:
-  import __builtin__ as builtins  # pylint: disable=unused-import
+  # pylint: disable=g-import-not-at-top,unused-import
+  import __builtin__ as builtins
 except ImportError:
+  # pylint: disable=g-import-not-at-top,unused-import
   import builtins
 
 try:
-    from StringIO import StringIO
+  # pylint: disable=g-import-not-at-top
+  from StringIO import StringIO
 except ImportError:
-    from io import StringIO
+  # pylint: disable=g-import-not-at-top
+  from io import StringIO
 
 
 FMT = "%Y-%m-%d %H:%M:%S %Z%z"
@@ -113,7 +117,7 @@ class TestLocalTimezoneDetection(unittest.TestCase):
     self.mocked("os.path.exists", os_path_exists_fake)
 
     # Check that when /etc/timezone is a valid input
-    def timezone_valid_fake(filename, mode='r', open=open):
+    def timezone_valid_fake(filename, mode="r", open=open):
       if filename == "/etc/timezone":
         return StringIO("Australia/Sydney")
       return open(filename, mode)
@@ -123,7 +127,7 @@ class TestLocalTimezoneDetection(unittest.TestCase):
     self.assertEqual(pytz.timezone("Australia/Sydney").zone, tzinfo.zone)
 
     # Check that when /etc/timezone is invalid timezone
-    def timezone_invalid_fake(filename, mode='r', open=open):
+    def timezone_invalid_fake(filename, mode="r", open=open):
       if filename == "/etc/timezone":
         return StringIO("Invalid-Timezone")
       return open(filename, mode)
@@ -133,7 +137,7 @@ class TestLocalTimezoneDetection(unittest.TestCase):
     self.assertEqual(None, tzinfo)
 
     # Check that when /etc/timezone is random "binary" data
-    def timezone_binary_fake(filename, mode='r', open=open):
+    def timezone_binary_fake(filename, mode="r", open=open):
       if filename == "/etc/timezone":
         return StringIO("\0\r\n\t\0\r\r\n\0")
       return open(filename, mode)
@@ -145,7 +149,7 @@ class TestLocalTimezoneDetection(unittest.TestCase):
   def testEtcLocaltimeMethodSingleMatch(self):
     test_zonedata_sydney = os.path.join(
         os.path.dirname(__file__), "test_zonedata_sydney")
-    f = open(test_zonedata_sydney, 'rb')
+    f = open(test_zonedata_sydney, "rb")
     test_tzinfo_sydney = pytz.tzfile.build_tzinfo(
         "Australia/Sydney", f)
     f.close()
@@ -173,7 +177,7 @@ class TestLocalTimezoneDetection(unittest.TestCase):
       return os_walk(dirname, *args, **kw)
     self.mocked("os.walk", os_walk_fake)
 
-    def localtime_valid_fake(filename, mode='r', open=open):
+    def localtime_valid_fake(filename, mode="r", open=open):
       if filename == "/etc/localtime":
         filename = os.path.join(os.path.dirname(__file__),
                                 localtime_file)
