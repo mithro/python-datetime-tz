@@ -71,8 +71,8 @@ for release in sorted(releases):
     print("Skipping release", release, "as it is already downloaded.")
     continue
 
-  release = mangle_release(release)
-  if not release:
+  mangled = mangle_release(release)
+  if not mangled:
     continue
 
   print("Downloading pytz release", release)
@@ -83,7 +83,7 @@ pip install \
     --no-binary all \
     --download %s \
     pytz==%s
-""" % (CACHE_DIR, release), shell=True)
+""" % (CACHE_DIR, mangled), shell=True)
   print("-"*75)
 
 if "--download-only" in sys.argv:
@@ -92,8 +92,8 @@ if "--download-only" in sys.argv:
 success = []
 failures = []
 for release in sorted(releases):
-  release = mangle_release(release)
-  if not release:
+  mangled = mangle_release(release)
+  if not mangled:
     print("Skipping release", release, "as it is isn't supported")
     continue
 
@@ -108,7 +108,7 @@ pip install \
     --no-index \
     --find-links=file://%s \
     pytz==%s
-""" % (CACHE_DIR, release), shell=True)
+""" % (CACHE_DIR, mangled), shell=True)
   print("-"*75)
   print("Running tests...")
   t = subprocess.Popen('python setup.py test', shell=True)
@@ -116,8 +116,6 @@ pip install \
     failures.append(release)
   else:
     success.append(release)
-    #import time
-    #time.sleep(30)
   print("="*75)
 
 print("Tests passed on pytz versions:")
