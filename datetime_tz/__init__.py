@@ -86,6 +86,7 @@ def _tzinfome(tzinfo):
   if not isinstance(tzinfo, datetime.tzinfo):
     try:
       tzinfo = pytz.timezone(tzinfo)
+      assert tzinfo.zone in pytz.all_timezones
     except AttributeError:
       raise pytz.UnknownTimeZoneError("Unknown timezone! %s" % tzinfo)
   return tzinfo
@@ -183,15 +184,45 @@ def _detect_timezone_etc_timezone():
       warnings.warn("Could not access your /etc/timezone file: %s" % eo)
 
 
+def _load_local_tzinfo():
+  tzdir = os.environ.get("TZDIR", "/usr/share/zoneinfo/posix")
+
+  localtzdata = {}
+  for dirpath, dirnames, filenames in os.walk(tzdir):
+    for filename in filenames:
+      filepath = os.path.join(dirpath, filename)
+      name = os.path.relpath(filepath, tzdir)
+
+      try:
+        tzinfo = pytz.tzfile.build_tzinfo(name, file(filepath))
+        localtzdata[name] = tzinfo
+      except Exception, e:
+        warnings.warn(e)
+
+  return localtzdata
+
+
 def _detect_timezone_etc_localtime():
   matches = []
   if os.path.exists("/etc/localtime"):
     localtime = pytz.tzfile.build_tzinfo("/etc/localtime",
                                          file("/etc/localtime"))
 
+    # We want to match against the local database because /etc/localtime will
+    # be copied from that. Once we have found a name for /etc/localtime, we can
+    # use the name to get the "same" timezone from the inbuilt pytz database.
+
+    tzdatabase = _load_local_tzinfo()
+    if tzdatabase:
+      tznames = tzdatabase.keys()
+      tzvalues = tzdatabase.__getitem__
+    else:
+      tznames = pytz.all_timezones
+      tzvalues = _tzinfome
+
     # See if we can find a "Human Name" for this..
-    for tzname in pytz.all_timezones:
-      tz = _tzinfome(tzname)
+    for tzname in tznames:
+      tz = tzvalues(tzname)
 
       if dir(tz) != dir(localtime):
         continue
@@ -211,24 +242,27 @@ def _detect_timezone_etc_localtime():
       # We get here iff break didn't happen, i.e. no meaningful attributes
       # differ between tz and localtime
       else:
-        matches.append(tzname)
+        # Try and get a timezone from pytz which has the same name as the zone
+        # which matches in the local database.
+        if tzname not in pytz.all_timezones:
+          warnings.warn("Skipping %s because not in pytz database." % tzname)
+          continue
+
+        matches.append(_tzinfome(tzname))
 
     if len(matches) == 1:
-      return _tzinfome(matches[0])
-    else:
-      # Warn the person about this!
-      warning = "Could not get a human name for your timezone: "
-      if len(matches) > 1:
-        warning += ("We detected multiple matches for your /etc/localtime. "
-                    "(Matches where %s)" % matches)
-        return _tzinfome(matches[0])
-      else:
-        warning += "We detected no matches for your /etc/localtime."
-      warnings.warn(warning)
+      return matches[0]
 
-      # Register /etc/localtime as the timezone loaded.
-      pytz._tzinfo_cache['/etc/localtime'] = localtime
-      return localtime
+    if len(matches) > 1:
+      warnings.warn("We detected multiple matches for your /etc/localtime. "
+                    "(Matches where %s)" % matches)
+      return matches[0]
+    else:
+      warnings.warn("We detected no matches for your /etc/localtime.")
+
+    # Register /etc/localtime as the timezone loaded.
+    pytz._tzinfo_cache['/etc/localtime'] = localtime
+    return localtime
 
 
 def _detect_timezone_php():

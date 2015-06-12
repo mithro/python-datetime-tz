@@ -129,45 +129,108 @@ class TestLocalTimezoneDetection(unittest.TestCase):
     self.assertEqual(None, tzinfo)
 
   def testEtcLocaltimeMethodSingleMatch(self):
+    test_zonedata_sydney = os.path.join(
+        os.path.dirname(__file__), "test_zonedata_sydney")
+    test_tzinfo_sydney = pytz.tzfile.build_tzinfo(
+        "Australia/Sydney", file(test_zonedata_sydney))
+
     def os_path_exists_fake(filename, os_path_exists=os.path.exists):
-      if filename == "/etc/localtime":
+      if filename in (
+          "/etc/localtime",
+          "/usr/share/zoneinfo/right/Etc/UTC",
+          "/usr/share/zoneinfo/right/Australia/Sydney",
+          ):
         return True
       return os_path_exists(filename)
     self.mocked("os.path.exists", os_path_exists_fake)
 
+    os_walk=os.walk
+    def os_walk_fake(dirname, *args, **kw):
+      if dirname in (
+          "/usr/share/zoneinfo/posix",
+          ):
+        return [
+          (dirname, ['Etc', 'Australia'], []),
+          (os.path.join(dirname, 'Etc'), [], ['UTC']),
+          (os.path.join(dirname, 'Australia'), [], ['Sydney', 'Melbourne']),
+          ]
+      return os_walk(dirname, *args, **kw)
+    self.mocked("os.walk", os_walk_fake)
+
     def localtime_valid_fake(filename, file=file):
       if filename == "/etc/localtime":
         filename = os.path.join(os.path.dirname(__file__),
-                                "test_localtime_sydney")
-        return file(filename)
+                                localtime_file)
+      if filename in (
+          "/usr/share/zoneinfo/posix/Australia/Melbourne",
+          "/usr/share/zoneinfo/posix/Australia/Sydney",
+          ):
+        filename = test_zonedata_sydney
+
+      if filename in (
+          "/usr/share/zoneinfo/posix/Etc/UTC",
+          ):
+        filename = os.path.join(os.path.dirname(__file__),
+                                "test_zonedata_utc")
       return file(filename)
     self.mocked("__builtin__.file", localtime_valid_fake)
 
-    # Test the single matches case
-    self.mocked("pytz.all_timezones", [pytz.timezone("Australia/Sydney")])
+    self.assertEqual(
+      ['Australia/Melbourne', 'Australia/Sydney', 'Etc/UTC'],
+      list(sorted(datetime_tz._load_local_tzinfo().keys())))
+
+    # Test the case where single match in the local database which also exists
+    # in the pytz database.
+    localtime_file = "test_zonedata_utc"
 
     r = datetime_tz._detect_timezone_etc_localtime()
+    self.assertEqual(r, pytz.timezone("Etc/UTC"))
 
-    self.assertEqual(r, pytz.timezone("Australia/Sydney"))
-
-    # Test the multiple matches case (choose first option)
-    self.mocked("pytz.all_timezones", [pytz.timezone("Australia/Sydney"),
-                                       pytz.timezone("Australia/Sydney")])
+    # Test the case where multiple matches in the local database which also
+    # exist in the pytz database.
+    localtime_file = "test_zonedata_sydney"
 
     r = datetime_tz._detect_timezone_etc_localtime()
+    self.assertEqual(r, pytz.timezone("Australia/Melbourne"))
 
+    # Test the case where multiple matches in the local database, but only one
+    # is in pytz database.
+    localtime_file = "test_zonedata_sydney"
+    self.mocked("pytz.all_timezones", ["Australia/Sydney"])
+
+    r = datetime_tz._detect_timezone_etc_localtime()
     self.assertEqual(r, pytz.timezone("Australia/Sydney"))
 
     # Test the no matches case
+    localtime_file = "test_zonedata_sydney"
     self.mocked("pytz.all_timezones", [])
 
     r = datetime_tz._detect_timezone_etc_localtime()
-
     self.assertEqual(r, pytz.timezone("/etc/localtime"))
-
     # Make sure we can still use the datetime object
     datetime_tz.datetime_tz.now() + datetime.timedelta(days=60)
 
+    # Test the case where /etc/localtime doesn't match anything in the local
+    # database and nothing in pytz.
+    localtime_file = "test_zonedata_utc"
+    self.mocked("datetime_tz._load_local_tzinfo", lambda: {"Australia/Sydney": test_tzinfo_sydney})
+    self.mocked("pytz.all_timezones", ['Australia/Sydney'])
+
+    r = datetime_tz._detect_timezone_etc_localtime()
+    self.assertEqual(r, pytz.timezone("/etc/localtime"))
+    # Make sure we can still use the datetime object
+    datetime_tz.datetime_tz.now() + datetime.timedelta(days=60)
+
+    # Test the case where there is no local database, so we fall back to
+    # matching pytz database
+    localtime_file = "test_zonedata_sydney"
+    self.mocked("datetime_tz._load_local_tzinfo", lambda: {})
+    self.mocked("pytz.all_timezones", ['Australia/Sydney'])
+    self.mocked("datetime_tz._tzinfome", lambda x: test_tzinfo_sydney)
+
+    r = datetime_tz._detect_timezone_etc_localtime()
+    self.assertNotEqual(r.zone, '/etc/localtime')
+    self.assertEqual(r, test_tzinfo_sydney)
 
   def testPHPMethod(self):
     # FIXME: Actually test this method sometime in the future.
