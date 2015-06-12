@@ -67,7 +67,7 @@ for release in sorted(releases):
   # downloading.
   filename = '*pytz-'+release+'*'
   if glob.glob(os.path.join(CACHE_DIR, filename)):
-    print("Skipping release", release, "as it is already downloaded.")
+    print("Not downloading release", release, "(already downloaded).")
     continue
 
   mangled = mangle_release(release)
