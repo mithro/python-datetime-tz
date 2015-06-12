@@ -4,8 +4,7 @@ python:
   - 2.7
 
 cache:
-  directories:
-    - $HOME/.cache/pip
+  pip
 
 install:
   - pip install --upgrade pip
