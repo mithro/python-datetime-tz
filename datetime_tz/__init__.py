@@ -1,4 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set ts=2 sw=2 et sts=2 ai:
 #
 # Copyright 2009 Google Inc.
 #
@@ -14,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
+
 # Disable the invalid name warning as we are inheriting from a standard library
 # object.
 # pylint: disable-msg=C6409,W0212

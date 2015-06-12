@@ -1,4 +1,6 @@
-#!/usr/bin/python2.4
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set ts=2 sw=2 et sts=2 ai:
 #
 # Copyright 2009 Google Inc.
 #
@@ -13,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 # Disable the protected method member warning as we are trying to test them!
 # Disable the bad name warnings as tests need to start with test in lowercase.
