@@ -59,7 +59,7 @@ class tzabbr(datetime.tzinfo):
 
 
 # A "marker" tzinfo object which is used to signify an unknown timezone.
-unknown = datetime.tzinfo(0)
+unknown = datetime.tzinfo()
 
 
 regions = {"all": {}, "military": {}}
