@@ -52,12 +52,18 @@ print("Using a download cache directory of", repr(CACHE_DIR))
 pypi_data_raw = urllib.urlopen('https://pypi.python.org/pypi/pytz/json').read()
 pypi_data = simplejson.loads(pypi_data_raw)
 
+# Hack to work around https://github.com/pypa/pip/issues/2902
+def mangle_release(release):
+  if release < "2007g":
+    return None
+
+  if release.endswith('r'):
+     return release[:-1]+'.post0'
+  return release
+
 releases = pypi_data['releases']
 # Download the pytz versions into the cache.
 for release in sorted(releases):
-  if release < "2007g":
-    continue
-
   # These lines shouldn't be needed but pypi always runs setup.py even when
   # downloading.
   filename = '*pytz-'+release+'*'
@@ -65,10 +71,16 @@ for release in sorted(releases):
     print("Skipping release", release, "as it is already downloaded.")
     continue
 
+  release = mangle_release(release)
+  if not release:
+    continue
+
   print("Downloading pytz release", release)
   print("="*75)
   subprocess.check_call("""\
 pip install \
+    --pre \
+    --no-binary all \
     --download %s \
     pytz==%s
 """ % (CACHE_DIR, release), shell=True)
@@ -80,8 +92,8 @@ if "--download-only" in sys.argv:
 success = []
 failures = []
 for release in sorted(releases):
-  # Skip very old versions
-  if release < "2007g":
+  release = mangle_release(release)
+  if not release:
     print("Skipping release", release, "as it is isn't supported")
     continue
 
@@ -91,6 +103,8 @@ for release in sorted(releases):
   print("Installing...")
   subprocess.check_call("""\
 pip install \
+    --pre \
+    --no-binary all \
     --no-index \
     --find-links=file://%s \
     pytz==%s
