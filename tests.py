@@ -18,17 +18,26 @@
 #
 
 # Disable the protected method member warning as we are trying to test them!
+# pylint: disable=protected-access
+
 # Disable the bad name warnings as tests need to start with test in lowercase.
+# pylint: disable=invalid-name
+
 # Disable the exception does nothing, as we want to test exceptions.
+# pylint: disable=pointless-except
+
 # Disable the missing docstrings as test methods are 'self documenting'.
+# pylint: disable=missing-docstring
+
 # Disable the override inbuilt, because that is exactly what we want to do.
-# pylint: disable-msg=W0212,C6409,C6111,W0622,W0704,W0611
+# pylint: disable=redefined-builtin
+
 
 """Tests for the datetime_tz module."""
 
 __author__ = "tansell@google.com (Tim Ansell)"
 
-import __builtin__
+import __builtin__  # pylint: disable=unused-import
 import datetime
 import os
 import StringIO
@@ -49,22 +58,19 @@ if not hasattr(pytz, "NonExistentTimeError"):
   pytz.NonExistentTimeError = pytz.AmbiguousTimeError
 
 
-import datetime_tz
-
-
 class MockMe(object):
   """Simple class to handle saving/restoring of mocked values."""
 
   def __init__(self):
     self.mocked = {}
 
-  # pylint: disable-msg=W0613,W0122
+  # pylint: disable=unused-argument,exec-used,eval-used
   def __call__(self, tomock, mockwith):
     if tomock not in self.mocked:
       self.mocked[tomock] = eval(tomock)
     exec("%s = mockwith" % tomock)
 
-  # pylint: disable-msg=W0612,W0122
+  # pylint: disable=unused-variable,exec-used
   def tearDown(self):
     for tomock, tounmock in self.mocked.iteritems():
       exec("%s = tounmock" % tomock)
@@ -144,16 +150,16 @@ class TestLocalTimezoneDetection(unittest.TestCase):
       return os_path_exists(filename)
     self.mocked("os.path.exists", os_path_exists_fake)
 
-    os_walk=os.walk
+    os_walk = os.walk
     def os_walk_fake(dirname, *args, **kw):
       if dirname in (
           "/usr/share/zoneinfo/posix",
           ):
         return [
-          (dirname, ['Etc', 'Australia'], []),
-          (os.path.join(dirname, 'Etc'), [], ['UTC']),
-          (os.path.join(dirname, 'Australia'), [], ['Sydney', 'Melbourne']),
-          ]
+            (dirname, ["Etc", "Australia"], []),
+            (os.path.join(dirname, "Etc"), [], ["UTC"]),
+            (os.path.join(dirname, "Australia"), [], ["Sydney", "Melbourne"]),
+            ]
       return os_walk(dirname, *args, **kw)
     self.mocked("os.walk", os_walk_fake)
 
@@ -176,8 +182,8 @@ class TestLocalTimezoneDetection(unittest.TestCase):
     self.mocked("__builtin__.file", localtime_valid_fake)
 
     self.assertEqual(
-      ['Australia/Melbourne', 'Australia/Sydney', 'Etc/UTC'],
-      list(sorted(datetime_tz._load_local_tzinfo().keys())))
+        ["Australia/Melbourne", "Australia/Sydney", "Etc/UTC"],
+        list(sorted(datetime_tz._load_local_tzinfo().keys())))
 
     # Test the case where single match in the local database which also exists
     # in the pytz database.
@@ -208,28 +214,31 @@ class TestLocalTimezoneDetection(unittest.TestCase):
     r = datetime_tz._detect_timezone_etc_localtime()
     self.assertEqual(r, pytz.timezone("/etc/localtime"))
     # Make sure we can still use the datetime object
+    # pylint: disable=expression-not-assigned
     datetime_tz.datetime_tz.now() + datetime.timedelta(days=60)
 
     # Test the case where /etc/localtime doesn't match anything in the local
     # database and nothing in pytz.
     localtime_file = "test_zonedata_utc"
-    self.mocked("datetime_tz._load_local_tzinfo", lambda: {"Australia/Sydney": test_tzinfo_sydney})
-    self.mocked("pytz.all_timezones", ['Australia/Sydney'])
+    self.mocked("datetime_tz._load_local_tzinfo",
+                lambda: {"Australia/Sydney": test_tzinfo_sydney})
+    self.mocked("pytz.all_timezones", ["Australia/Sydney"])
 
     r = datetime_tz._detect_timezone_etc_localtime()
     self.assertEqual(r, pytz.timezone("/etc/localtime"))
     # Make sure we can still use the datetime object
+    # pylint: disable=expression-not-assigned
     datetime_tz.datetime_tz.now() + datetime.timedelta(days=60)
 
     # Test the case where there is no local database, so we fall back to
     # matching pytz database
     localtime_file = "test_zonedata_sydney"
     self.mocked("datetime_tz._load_local_tzinfo", lambda: {})
-    self.mocked("pytz.all_timezones", ['Australia/Sydney'])
+    self.mocked("pytz.all_timezones", ["Australia/Sydney"])
     self.mocked("datetime_tz._tzinfome", lambda x: test_tzinfo_sydney)
 
     r = datetime_tz._detect_timezone_etc_localtime()
-    self.assertNotEqual(r.zone, '/etc/localtime')
+    self.assertNotEqual(r.zone, "/etc/localtime")
     self.assertEqual(r, test_tzinfo_sydney)
 
   def testPHPMethod(self):
@@ -277,13 +286,13 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(str(a), "2008-07-06 05:04:03+00:00")
     self.assertEqual(a.totimestamp(), 1215320643.0)
     # FIXME(tansell): %s is effected by the TZ environment value.
-    #self.assertEqual(a.strftime("%s"), "1215284643")
+    # self.assertEqual(a.strftime("%s"), "1215284643")
 
     italy = pytz.timezone("Europe/Rome")
     b = a.astimezone(italy)
     self.assertEqual(str(b), "2008-07-06 07:04:03+02:00")
     self.assertEqual(b.totimestamp(), 1215320643.0)
-    #self.assertNotEqual(b.strftime("%s"), "1215284643")
+    # self.assertNotEqual(b.strftime("%s"), "1215284643")
 
     # TODO(tansell): We still discard timezone information in strptime...
     # datetime.strptime silently throws away all timezone information. If you
@@ -660,10 +669,10 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(replace.strftime(FMT), "2002-10-28 01:10:00 EST-0500")
 
     # FIXME(tansell): Make these test work.
-    #self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
-    #                  day=26, is_dst=False)
-    #self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
-    #                  day=28, is_dst=True)
+    # self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
+    #                   day=26, is_dst=False)
+    # self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
+    #                   day=28, is_dst=True)
 
     # Testing starting in DST
     utc_dt = datetime_tz.datetime_tz(2002, 4, 7, 7, 10, 00, tzinfo=pytz.utc)
@@ -679,7 +688,6 @@ class TestDatetimeTZ(unittest.TestCase):
     # 2:30 doesn't actually exist
     self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
                       hour=2, minute=30, second=0, microsecond=0)
-
 
   def testSmartParse(self):
     datetime_tz.localtz_set("Australia/Sydney")
@@ -874,25 +882,29 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(-300))
-    self.assertEqual(d, pytz.FixedOffset(-300).localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
+    self.assertEqual(d, pytz.FixedOffset(-300).localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00+0800", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00+08:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(480))
-    self.assertEqual(d, pytz.FixedOffset(480).localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
+    self.assertEqual(d, pytz.FixedOffset(480).localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST-05:00", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
-    self.assertEqual(d, pytz.timezone("US/Eastern").localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 EST 2009", tz)
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
-    self.assertEqual(d, pytz.timezone("US/Eastern").localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     # Test datetime string with timezone information,
     # no more timezone argument
@@ -900,31 +912,36 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(-300))
-    self.assertEqual(d, pytz.FixedOffset(-300).localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
+    self.assertEqual(d, pytz.FixedOffset(-300).localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00+0800")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00+08:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(480))
-    self.assertEqual(d, pytz.FixedOffset(480).localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
+    self.assertEqual(d, pytz.FixedOffset(480).localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
-    self.assertEqual(d, pytz.timezone("US/Eastern").localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST-05:00")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
-    self.assertEqual(d, pytz.timezone("US/Eastern").localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 EST 2009")
     self.assert_(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
-    self.assertEqual(d, pytz.timezone("US/Eastern").localize(datetime.datetime(2009, 11, 9, 23, 0, 0)))
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     # UTC, nice and easy
     d = datetime_tz.datetime_tz.smartparse("Tue Jul 03 06:00:01 UTC 2010")
@@ -1013,6 +1030,7 @@ class TestDatetimeTZ(unittest.TestCase):
 
 
 class TestIterate(unittest.TestCase):
+
   def testBetween(self):
     iterate = datetime_tz.iterate
 

@@ -17,16 +17,16 @@
 # limitations under the License.
 #
 
+# pylint doesn't understand the from __future__ import which must be the first
+# line of the file.
+# pylint: disable=missing-docstring,pointless-string-statement
+# pylint: disable=g-statement-before-imports
+
 from __future__ import print_function
 
 """Run the tests against every pytz version available."""
 
 __author__ = "tansell@google.com (Tim Ansell)"
-
-try:
-  import simplejson
-except ImportError:
-  import json as simplejson
 
 import glob
 import os
@@ -35,37 +35,46 @@ import subprocess
 import sys
 import urllib
 
-if not hasattr(sys, 'real_prefix'):
+# pylint: disable=g-import-not-at-top
+try:
+  import simplejson
+except ImportError:
+  import json as simplejson
+
+
+if not hasattr(sys, "real_prefix"):
   print("""\
 This script should only be run inside a virtualenv because it is going to
 modify the install version of things.
 """)
   sys.exit(1)
 
-CACHE_DIR = os.path.expanduser(os.path.join('~', '.cache', 'pypi'))
+CACHE_DIR = os.path.expanduser(os.path.join("~", ".cache", "pypi"))
 if not os.path.exists(CACHE_DIR):
   os.makedirs(CACHE_DIR)
 print("Using a download cache directory of", repr(CACHE_DIR))
 
 # Get the pytz versions from pypi
-pypi_data_raw = urllib.urlopen('https://pypi.python.org/pypi/pytz/json').read()
+pypi_data_raw = urllib.urlopen("https://pypi.python.org/pypi/pytz/json").read()
 pypi_data = simplejson.loads(pypi_data_raw)
 
+
 # Hack to work around https://github.com/pypa/pip/issues/2902
-def mangle_release(release):
-  if release < "2007g":
+def mangle_release(rel):
+  if rel < "2007g":
     return None
 
-  if release.endswith('r'):
-     return release[:-1]+'.post0'
-  return release
+  if rel.endswith("r"):
+    return rel[:-1]+".post0"
+  return rel
 
-releases = pypi_data['releases']
+
+releases = pypi_data["releases"]
 # Download the pytz versions into the cache.
 for release in sorted(releases):
   # These lines shouldn't be needed but pypi always runs setup.py even when
   # downloading.
-  filename = '*pytz-'+release+'*'
+  filename = "*pytz-"+release+"*"
   if glob.glob(os.path.join(CACHE_DIR, filename)):
     print("Not downloading release", release, "(already downloaded).")
     continue
@@ -110,7 +119,7 @@ pip install \
 """ % (CACHE_DIR, mangled), shell=True)
   print("-"*75)
   print("Running tests...")
-  t = subprocess.Popen('python setup.py test', shell=True)
+  t = subprocess.Popen("python setup.py test", shell=True)
   if t.wait() != 0:
     failures.append(release)
   else:
@@ -124,5 +133,5 @@ print("Tests failed on pytz versions:")
 print(failures)
 print("="*75)
 
-if len(failures) > 0:
+if failures:
   sys.exit(1)

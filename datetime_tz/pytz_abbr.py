@@ -17,8 +17,7 @@
 # limitations under the License.
 #
 
-"""
-Common time zone acronyms/abbreviations for use with the datetime_tz module.
+"""Common time zone acronyms/abbreviations for use with the datetime_tz module.
 
 *WARNING*: There are lots of caveats when using this module which are listed
 below.
@@ -63,10 +62,10 @@ class tzabbr(datetime.tzinfo):
 unknown = datetime.tzinfo(0)
 
 
-regions = {'all': {}, 'military': {}}
+regions = {"all": {}, "military": {}}
 # Create a special alias for the all and military regions
-all = regions['all']
-military = regions['military']
+all = regions["all"]
+military = regions["military"]
 
 
 def tzabbr_register(abbr, name, region, zone, dst):
@@ -115,7 +114,7 @@ def tzinfos_create(use_region):
 
 
 # Create a special alias for the all tzinfos
-tzinfos = tzinfos_create('all')
+tzinfos = tzinfos_create("all")
 
 
 # Create the abbreviations.
