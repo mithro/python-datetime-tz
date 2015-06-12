@@ -28,6 +28,9 @@ try:
 except ImportError:
   import json as simplejson
 
+import glob
+import os
+import os.path
 import pprint
 import subprocess
 import sys
@@ -40,11 +43,41 @@ modify the install version of things.
 """)
   sys.exit(1)
 
+CACHE_DIR = os.path.expanduser(os.path.join('~', '.cache', 'pypi'))
+if not os.path.exists(CACHE_DIR):
+  os.makedirs(CACHE_DIR)
+
 # Get the pytz versions from pypi
 pypi_data_raw = urllib.urlopen('https://pypi.python.org/pypi/pytz/json').read()
 pypi_data = simplejson.loads(pypi_data_raw)
 
 releases = pypi_data['releases']
+# Download the pytz versions into the cache.
+for release in sorted(releases):
+  if release < "2007g":
+    continue
+
+  # These lines shouldn't be needed but pypi always runs setup.py even when
+  # downloading.
+  filename = '*pytz-'+release+'*'
+  if glob.glob(os.path.join(CACHE_DIR, filename)):
+    print("Skipping release", release, "as it is already downloaded.")
+    continue
+
+  print("Downloading pytz release", release)
+  print("="*75)
+  subprocess.check_call("""\
+pip install \
+    --use-mirrors \
+    --download %s \
+    --download-cache %s \
+    pytz==%s
+""" % (CACHE_DIR, CACHE_DIR, release), shell=True)
+  print("-"*75)
+
+if "--download-only" in sys.argv:
+  sys.exit(0)
+
 success = []
 failures = []
 for release in sorted(releases):
@@ -57,7 +90,13 @@ for release in sorted(releases):
   print("Running tests with pytz release", release)
   print("="*75)
   print("Installing...")
-  subprocess.check_call('pip install --use-mirrors --force-reinstall pytz=='+release, shell=True)
+  subprocess.check_call("""\
+pip install \
+    --use-mirrors \
+    --force-reinstall \
+    --download-cache %s \
+    pytz==%s
+""" % (CACHE_DIR, release), shell=True)
   print("-"*75)
   print("Running tests...")
   t = subprocess.Popen('python setup.py test', shell=True)
