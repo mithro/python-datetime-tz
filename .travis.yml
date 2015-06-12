@@ -9,6 +9,7 @@ cache:
 
 install:
   - pip install --upgrade pip
+  - pip install pyopenssl ndg-httpsclient pyasn1
   - pip install -r requirements.txt
   - python setup.py install
   - python run_tests_all_pytz.py --download-only
