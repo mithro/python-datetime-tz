@@ -70,9 +70,8 @@ for release in sorted(releases):
   subprocess.check_call("""\
 pip install \
     --download %s \
-    --download-cache %s \
     pytz==%s
-""" % (CACHE_DIR, CACHE_DIR, release), shell=True)
+""" % (CACHE_DIR, release), shell=True)
   print("-"*75)
 
 if "--download-only" in sys.argv:
@@ -92,8 +91,8 @@ for release in sorted(releases):
   print("Installing...")
   subprocess.check_call("""\
 pip install \
-    --force-reinstall \
-    --download-cache %s \
+    --no-index \
+    --find-links=file://%s \
     pytz==%s
 """ % (CACHE_DIR, release), shell=True)
   print("-"*75)
