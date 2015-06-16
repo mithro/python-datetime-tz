@@ -49,7 +49,7 @@ A drop in replacement for Python's datetime module which cares deeply about time
 
 if sys.version[:3] < '3.0':
     data['install_requires'].append('pytz >= 2007g')
-    data['install_requires'].append('python-dateutil >= 1.4, < 2.0')
+    data['install_requires'].append('python-dateutil >= 1.4')
 else:
     data['install_requires'].append('pytz >= 2011g')
     data['install_requires'].append('python-dateutil >= 2.0')
