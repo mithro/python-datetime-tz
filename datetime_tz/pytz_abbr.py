@@ -1,11 +1,23 @@
-#!/usr/bin/python2.4
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vim: set ts=2 sw=2 et sts=2 ai:
 #
 # Copyright 2010 Google Inc. All Rights Reserved.
 #
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
-"""
-Common time zone acronyms/abbreviations for use with the datetime_tz module.
+"""Common time zone acronyms/abbreviations for use with the datetime_tz module.
 
 *WARNING*: There are lots of caveats when using this module which are listed
 below.
@@ -47,13 +59,13 @@ class tzabbr(datetime.tzinfo):
 
 
 # A "marker" tzinfo object which is used to signify an unknown timezone.
-unknown = datetime.tzinfo(0)
+unknown = datetime.tzinfo()
 
 
-regions = {'all': {}, 'military': {}}
+regions = {"all": {}, "military": {}}
 # Create a special alias for the all and military regions
-all = regions['all']
-military = regions['military']
+all = regions["all"]
+military = regions["military"]
 
 
 def tzabbr_register(abbr, name, region, zone, dst):
@@ -91,7 +103,7 @@ def tzinfos_create(use_region):
           pass
         return result
       else:
-        raise ValueError, "Unknown timezone found %s" % abbr
+        raise ValueError("Unknown timezone found %s" % abbr)
     if offset == 0:
       return pytz.utc
     if offset:
@@ -102,7 +114,7 @@ def tzinfos_create(use_region):
 
 
 # Create a special alias for the all tzinfos
-tzinfos = tzinfos_create('all')
+tzinfos = tzinfos_create("all")
 
 
 # Create the abbreviations.

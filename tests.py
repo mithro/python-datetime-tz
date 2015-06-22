@@ -1,4 +1,6 @@
-#!/usr/bin/python2.4
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim: set ts=2 sw=2 et sts=2 ai:
 #
 # Copyright 2009 Google Inc.
 #
@@ -13,28 +15,50 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 # Disable the protected method member warning as we are trying to test them!
+# pylint: disable=protected-access
+
 # Disable the bad name warnings as tests need to start with test in lowercase.
+# pylint: disable=invalid-name
+
 # Disable the exception does nothing, as we want to test exceptions.
+# pylint: disable=pointless-except
+
 # Disable the missing docstrings as test methods are 'self documenting'.
+# pylint: disable=missing-docstring
+
 # Disable the override inbuilt, because that is exactly what we want to do.
-# pylint: disable-msg=W0212,C6409,C6111,W0622,W0704,W0611
+# pylint: disable=redefined-builtin
+
 
 """Tests for the datetime_tz module."""
 
 __author__ = "tansell@google.com (Tim Ansell)"
 
-import __builtin__
 import datetime
 import os
-import StringIO
 import unittest
 import warnings
 import dateutil
 import pytz
 
 import datetime_tz
+
+try:
+  # pylint: disable=g-import-not-at-top,unused-import
+  import __builtin__ as builtins
+except ImportError:
+  # pylint: disable=g-import-not-at-top,unused-import
+  import builtins
+
+try:
+  # pylint: disable=g-import-not-at-top
+  from StringIO import StringIO
+except ImportError:
+  # pylint: disable=g-import-not-at-top
+  from io import StringIO
 
 
 FMT = "%Y-%m-%d %H:%M:%S %Z%z"
@@ -46,24 +70,21 @@ if not hasattr(pytz, "NonExistentTimeError"):
   pytz.NonExistentTimeError = pytz.AmbiguousTimeError
 
 
-import datetime_tz
-
-
 class MockMe(object):
   """Simple class to handle saving/restoring of mocked values."""
 
   def __init__(self):
     self.mocked = {}
 
-  # pylint: disable-msg=W0613,W0122
+  # pylint: disable=unused-argument,exec-used,eval-used
   def __call__(self, tomock, mockwith):
     if tomock not in self.mocked:
       self.mocked[tomock] = eval(tomock)
     exec("%s = mockwith" % tomock)
 
-  # pylint: disable-msg=W0612,W0122
+  # pylint: disable=unused-variable,exec-used
   def tearDown(self):
-    for tomock, tounmock in self.mocked.iteritems():
+    for tomock, tounmock in self.mocked.items():
       exec("%s = tounmock" % tomock)
 
 
@@ -96,75 +117,143 @@ class TestLocalTimezoneDetection(unittest.TestCase):
     self.mocked("os.path.exists", os_path_exists_fake)
 
     # Check that when /etc/timezone is a valid input
-    def timezone_valid_fake(filename, file=open):
+    def timezone_valid_fake(filename, mode="r", open=open):
       if filename == "/etc/timezone":
-        return StringIO.StringIO("Australia/Sydney")
-      return file(filename)
+        return StringIO("Australia/Sydney")
+      return open(filename, mode)
 
-    self.mocked("__builtin__.file", timezone_valid_fake)
+    self.mocked("builtins.open", timezone_valid_fake)
     tzinfo = datetime_tz._detect_timezone_etc_timezone()
     self.assertEqual(pytz.timezone("Australia/Sydney").zone, tzinfo.zone)
 
     # Check that when /etc/timezone is invalid timezone
-    def timezone_invalid_fake(filename, file=open):
+    def timezone_invalid_fake(filename, mode="r", open=open):
       if filename == "/etc/timezone":
-        return StringIO.StringIO("Invalid-Timezone")
-      return file(filename)
+        return StringIO("Invalid-Timezone")
+      return open(filename, mode)
 
-    self.mocked("__builtin__.file", timezone_invalid_fake)
+    self.mocked("builtins.open", timezone_invalid_fake)
     tzinfo = datetime_tz._detect_timezone_etc_timezone()
     self.assertEqual(None, tzinfo)
 
     # Check that when /etc/timezone is random "binary" data
-    def timezone_binary_fake(filename, file=open):
+    def timezone_binary_fake(filename, mode="r", open=open):
       if filename == "/etc/timezone":
-        return StringIO.StringIO("\0\r\n\t\0\r\r\n\0")
-      return file(filename)
+        return StringIO("\0\r\n\t\0\r\r\n\0")
+      return open(filename, mode)
 
-    self.mocked("__builtin__.file", timezone_binary_fake)
+    self.mocked("builtins.open", timezone_binary_fake)
     tzinfo = datetime_tz._detect_timezone_etc_timezone()
     self.assertEqual(None, tzinfo)
 
   def testEtcLocaltimeMethodSingleMatch(self):
+    test_zonedata_sydney = os.path.join(
+        os.path.dirname(__file__), "test_zonedata_sydney")
+    f = open(test_zonedata_sydney, "rb")
+    test_tzinfo_sydney = pytz.tzfile.build_tzinfo(
+        "Australia/Sydney", f)
+    f.close()
+
     def os_path_exists_fake(filename, os_path_exists=os.path.exists):
-      if filename == "/etc/localtime":
+      if filename in (
+          "/etc/localtime",
+          "/usr/share/zoneinfo/right/Etc/UTC",
+          "/usr/share/zoneinfo/right/Australia/Sydney",
+          ):
         return True
       return os_path_exists(filename)
     self.mocked("os.path.exists", os_path_exists_fake)
 
-    def localtime_valid_fake(filename, file=file):
+    os_walk = os.walk
+    def os_walk_fake(dirname, *args, **kw):
+      if dirname in (
+          "/usr/share/zoneinfo/posix",
+          ):
+        return [
+            (dirname, ["Etc", "Australia"], []),
+            (os.path.join(dirname, "Etc"), [], ["UTC"]),
+            (os.path.join(dirname, "Australia"), [], ["Sydney", "Melbourne"]),
+            ]
+      return os_walk(dirname, *args, **kw)
+    self.mocked("os.walk", os_walk_fake)
+
+    def localtime_valid_fake(filename, mode="r", open=open):
       if filename == "/etc/localtime":
         filename = os.path.join(os.path.dirname(__file__),
-                                "test_localtime_sydney")
-        return file(filename)
-      return file(filename)
-    self.mocked("__builtin__.file", localtime_valid_fake)
+                                localtime_file)
+      if filename in (
+          "/usr/share/zoneinfo/posix/Australia/Melbourne",
+          "/usr/share/zoneinfo/posix/Australia/Sydney",
+          ):
+        filename = test_zonedata_sydney
 
-    # Test the single matches case
-    self.mocked("pytz.all_timezones", [pytz.timezone("Australia/Sydney")])
+      if filename in (
+          "/usr/share/zoneinfo/posix/Etc/UTC",
+          ):
+        filename = os.path.join(os.path.dirname(__file__),
+                                "test_zonedata_utc")
+      return open(filename, mode)
+    self.mocked("builtins.open", localtime_valid_fake)
+
+    self.assertEqual(
+        ["Australia/Melbourne", "Australia/Sydney", "Etc/UTC"],
+        list(sorted(datetime_tz._load_local_tzinfo().keys())))
+
+    # Test the case where single match in the local database which also exists
+    # in the pytz database.
+    localtime_file = "test_zonedata_utc"
 
     r = datetime_tz._detect_timezone_etc_localtime()
+    self.assertEqual(r, pytz.timezone("Etc/UTC"))
 
-    self.assertEqual(r, pytz.timezone("Australia/Sydney"))
-
-    # Test the multiple matches case (choose first option)
-    self.mocked("pytz.all_timezones", [pytz.timezone("Australia/Sydney"),
-                                       pytz.timezone("Australia/Sydney")])
+    # Test the case where multiple matches in the local database which also
+    # exist in the pytz database.
+    localtime_file = "test_zonedata_sydney"
 
     r = datetime_tz._detect_timezone_etc_localtime()
+    self.assertEqual(r, pytz.timezone("Australia/Melbourne"))
 
+    # Test the case where multiple matches in the local database, but only one
+    # is in pytz database.
+    localtime_file = "test_zonedata_sydney"
+    self.mocked("pytz.all_timezones", ["Australia/Sydney"])
+
+    r = datetime_tz._detect_timezone_etc_localtime()
     self.assertEqual(r, pytz.timezone("Australia/Sydney"))
 
     # Test the no matches case
+    localtime_file = "test_zonedata_sydney"
     self.mocked("pytz.all_timezones", [])
 
     r = datetime_tz._detect_timezone_etc_localtime()
-
     self.assertEqual(r, pytz.timezone("/etc/localtime"))
-
     # Make sure we can still use the datetime object
+    # pylint: disable=expression-not-assigned
     datetime_tz.datetime_tz.now() + datetime.timedelta(days=60)
 
+    # Test the case where /etc/localtime doesn't match anything in the local
+    # database and nothing in pytz.
+    localtime_file = "test_zonedata_utc"
+    self.mocked("datetime_tz._load_local_tzinfo",
+                lambda: {"Australia/Sydney": test_tzinfo_sydney})
+    self.mocked("pytz.all_timezones", ["Australia/Sydney"])
+
+    r = datetime_tz._detect_timezone_etc_localtime()
+    self.assertEqual(r, pytz.timezone("/etc/localtime"))
+    # Make sure we can still use the datetime object
+    # pylint: disable=expression-not-assigned
+    datetime_tz.datetime_tz.now() + datetime.timedelta(days=60)
+
+    # Test the case where there is no local database, so we fall back to
+    # matching pytz database
+    localtime_file = "test_zonedata_sydney"
+    self.mocked("datetime_tz._load_local_tzinfo", lambda: {})
+    self.mocked("pytz.all_timezones", ["Australia/Sydney"])
+    self.mocked("datetime_tz._tzinfome", lambda x: test_tzinfo_sydney)
+
+    r = datetime_tz._detect_timezone_etc_localtime()
+    self.assertNotEqual(r.zone, "/etc/localtime")
+    self.assertEqual(r, test_tzinfo_sydney)
 
   def testPHPMethod(self):
     # FIXME: Actually test this method sometime in the future.
@@ -211,13 +300,13 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(str(a), "2008-07-06 05:04:03+00:00")
     self.assertEqual(a.totimestamp(), 1215320643.0)
     # FIXME(tansell): %s is effected by the TZ environment value.
-    #self.assertEqual(a.strftime("%s"), "1215284643")
+    # self.assertEqual(a.strftime("%s"), "1215284643")
 
     italy = pytz.timezone("Europe/Rome")
     b = a.astimezone(italy)
     self.assertEqual(str(b), "2008-07-06 07:04:03+02:00")
     self.assertEqual(b.totimestamp(), 1215320643.0)
-    #self.assertNotEqual(b.strftime("%s"), "1215284643")
+    # self.assertNotEqual(b.strftime("%s"), "1215284643")
 
     # TODO(tansell): We still discard timezone information in strptime...
     # datetime.strptime silently throws away all timezone information. If you
@@ -227,29 +316,29 @@ class TestDatetimeTZ(unittest.TestCase):
     # Create with the local timezone
     datetime_tz.localtz_set(pytz.utc)
     d0 = datetime_tz.datetime_tz(2008, 10, 1)
-    self.assert_(isinstance(d0, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d0, datetime_tz.datetime_tz))
     self.assertEqual(d0.tzinfo, pytz.utc)
 
     # Creation with string timezone
     d1 = datetime_tz.datetime_tz(2008, 10, 1, tzinfo="UTC")
-    self.assert_(isinstance(d1, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d1, datetime_tz.datetime_tz))
     self.assertEqual(d1.tzinfo, pytz.utc)
 
     # Creation with tzinfo object
     d2 = datetime_tz.datetime_tz(2008, 10, 1, tzinfo=pytz.utc)
-    self.assert_(isinstance(d2, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d2, datetime_tz.datetime_tz))
     self.assertEqual(d1.tzinfo, pytz.utc)
 
     # Creation from a datetime_tz object
     d3 = datetime_tz.datetime_tz(d1)
-    self.assert_(isinstance(d3, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d3, datetime_tz.datetime_tz))
     self.assertEqual(d1.tzinfo, d3.tzinfo)
 
     # Creation from a datetime object
     d4 = datetime.datetime.now()
     d4 = pytz.timezone("Australia/Sydney").localize(d4)
     d5 = datetime_tz.datetime_tz(d4)
-    self.assert_(isinstance(d3, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d3, datetime_tz.datetime_tz))
     self.assertEqual(d4.tzinfo, d5.tzinfo)
 
     # Creation from a naive datetime object not in DST
@@ -261,7 +350,7 @@ class TestDatetimeTZ(unittest.TestCase):
       pass
 
     d7 = datetime_tz.datetime_tz(d6, "US/Pacific")
-    self.assert_(isinstance(d7, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d7, datetime_tz.datetime_tz))
     self.assertEqual(d7.tzinfo.zone, "US/Pacific")
     self.assertEqual(d7.tzinfo._dst, datetime.timedelta(0))
 
@@ -275,17 +364,17 @@ class TestDatetimeTZ(unittest.TestCase):
 
     d7 = datetime_tz.datetime_tz(d6, "US/Pacific")
 
-    self.assert_(isinstance(d7, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d7, datetime_tz.datetime_tz))
     self.assertEqual(d7.tzinfo.zone, "US/Pacific")
     self.assertEqual(d7.tzinfo._dst, datetime.timedelta(0, 3600))
 
     datetime_tz.localtz_set(pytz.utc)
     d0 = datetime_tz.datetime_tz(2008, 10, 1)
-    self.assert_(isinstance(d0, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d0, datetime_tz.datetime_tz))
     self.assertEqual(d0.tzinfo, pytz.utc)
 
     d1 = datetime_tz.datetime_tz(d1)
-    self.assert_(isinstance(d1, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d1, datetime_tz.datetime_tz))
     self.assertEqual(d1.tzinfo, pytz.utc)
     self.assertEqual(d0, d1)
     self.assertFalse(d0 is d1)
@@ -436,17 +525,17 @@ class TestDatetimeTZ(unittest.TestCase):
     dreplace = datetime_tz.datetime_tz.now()
     dreplace = dreplace.replace(day=1)
 
-    self.assert_(isinstance(dadd, datetime_tz.datetime_tz))
-    self.assert_(isinstance(dsub, datetime_tz.datetime_tz))
-    self.assert_(isinstance(dradd, datetime_tz.datetime_tz))
-    self.assert_(isinstance(drsub, datetime_tz.datetime_tz))
-    self.assert_(isinstance(dreplace, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(dadd, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(dsub, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(dradd, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(drsub, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(dreplace, datetime_tz.datetime_tz))
 
     try:
       dreplace = datetime_tz.datetime_tz.now()
       dreplace = dreplace.replace(days=1)
 
-      self.assert_(False)
+      self.assertTrue(False)
     except TypeError:
       pass
 
@@ -463,7 +552,7 @@ class TestDatetimeTZ(unittest.TestCase):
     for timestamp in -100000000, -1, 0, 1, 1233300000:
       d = datetime_tz.datetime_tz.utcfromtimestamp(timestamp)
 
-      self.assert_(isinstance(d, datetime_tz.datetime_tz))
+      self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
       self.assertEqual(d.tzinfo, pytz.utc)
       self.assertEqual(d.totimestamp(), timestamp)
 
@@ -473,13 +562,13 @@ class TestDatetimeTZ(unittest.TestCase):
     for timestamp in -100000000, -1, 0, 1, 1233300000:
       d = datetime_tz.datetime_tz.fromtimestamp(timestamp)
 
-      self.assert_(isinstance(d, datetime_tz.datetime_tz))
+      self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
       self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Pacific").zone)
       self.assertEqual(d.totimestamp(), timestamp)
 
       # Changing the timezone should have no effect on the timestamp produced.
       d = d.astimezone("UTC")
-      self.assert_(isinstance(d, datetime_tz.datetime_tz))
+      self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
       self.assertEqual(d.tzinfo, pytz.utc)
       self.assertEqual(d.totimestamp(), timestamp)
 
@@ -488,25 +577,25 @@ class TestDatetimeTZ(unittest.TestCase):
 
     d = datetime_tz.datetime_tz.utcnow()
 
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo, pytz.utc)
 
   def testAsDate(self):
     d = datetime_tz.datetime_tz.now()
 
-    self.assert_(isinstance(d, datetime.date))
+    self.assertTrue(isinstance(d, datetime.date))
 
   def testConvert(self):
     d = datetime_tz.datetime_tz(2009, 5, 1, 16, 12, 10)
 
     d_datetime = d.asdatetime()
-    self.assert_(isinstance(d_datetime, datetime.datetime))
-    self.assert_(not isinstance(d_datetime, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d_datetime, datetime.datetime))
+    self.assertTrue(not isinstance(d_datetime, datetime_tz.datetime_tz))
     self.assertEqual(d_datetime, datetime.datetime(2009, 5, 1, 16, 12, 10))
 
     d_date = d.asdate()
-    self.assert_(isinstance(d_date, datetime.date))
-    self.assert_(not isinstance(d_date, datetime.datetime))
+    self.assertTrue(isinstance(d_date, datetime.date))
+    self.assertTrue(not isinstance(d_date, datetime.datetime))
     self.assertEqual(d_date, datetime.date(2009, 5, 1))
 
   def testNow(self):
@@ -514,12 +603,12 @@ class TestDatetimeTZ(unittest.TestCase):
 
     d = datetime_tz.datetime_tz.now()
 
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Pacific").zone)
 
     tz = pytz.timezone("Australia/Sydney")
     d = datetime_tz.datetime_tz.now(tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
   def testFromOrdinal(self):
@@ -594,10 +683,10 @@ class TestDatetimeTZ(unittest.TestCase):
     self.assertEqual(replace.strftime(FMT), "2002-10-28 01:10:00 EST-0500")
 
     # FIXME(tansell): Make these test work.
-    #self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
-    #                  day=26, is_dst=False)
-    #self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
-    #                  day=28, is_dst=True)
+    # self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
+    #                   day=26, is_dst=False)
+    # self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
+    #                   day=28, is_dst=True)
 
     # Testing starting in DST
     utc_dt = datetime_tz.datetime_tz(2002, 4, 7, 7, 10, 00, tzinfo=pytz.utc)
@@ -613,7 +702,6 @@ class TestDatetimeTZ(unittest.TestCase):
     # 2:30 doesn't actually exist
     self.assertRaises(pytz.NonExistentTimeError, loc_dt.replace,
                       hour=2, minute=30, second=0, microsecond=0)
-
 
   def testSmartParse(self):
     datetime_tz.localtz_set("Australia/Sydney")
@@ -631,131 +719,131 @@ class TestDatetimeTZ(unittest.TestCase):
     self.mocked("datetime_tz.datetime_tz.now", now_fake)
 
     d = datetime_tz.datetime_tz.smartparse("now", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now)
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("today", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now)
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     # test that it's not case sensitive
     d = datetime_tz.datetime_tz.smartparse("ToDay", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now)
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("NOW", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now)
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("yesterday", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("tomorrow", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, tomorrow)
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("a second ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(seconds=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("1 second ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(seconds=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("2 seconds ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(seconds=2))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("1 minute ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(minutes=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("2 minutes ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(minutes=2))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("1 hour ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(hours=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("2 hours ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(hours=2))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("2 days ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=2))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("2 days 5 hours ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=2, hours=5))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("2 days and a hour ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=2, hours=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("4 daYs AND A SECond aGO", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=4, seconds=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("1 day and a hour ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=1, hours=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("an hour and a day ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=1, hours=1))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("1d 2h ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(days=1, hours=2))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("2h5m32s ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-datetime.timedelta(hours=2, minutes=5, seconds=32))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("1y 2 month ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-dateutil.relativedelta.relativedelta(
         years=1, months=2))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("2 months and 3m ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-dateutil.relativedelta.relativedelta(
         months=2, minutes=3))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("3m4months1y ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-dateutil.relativedelta.relativedelta(
         years=1, months=4, minutes=3))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("3m4months and 1y ago", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now-dateutil.relativedelta.relativedelta(
         years=1, months=4, minutes=3))
     self.assertEqual(d.tzinfo.zone, tz.zone)
@@ -770,33 +858,33 @@ class TestDatetimeTZ(unittest.TestCase):
 
     # FIXME: These below should actually test the equivalence
     d = datetime_tz.datetime_tz.smartparse("start of today", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, now.replace(hour=0, minute=0, second=0, microsecond=0))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("start of tomorrow", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(
         d, tomorrow.replace(hour=0, minute=0, second=0, microsecond=0))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("start of yesterday", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("end of today", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("end of tomorrow", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(
         d, tomorrow.replace(
             hour=23, minute=59, second=59, microsecond=999999))
     self.assertEqual(d.tzinfo.zone, tz.zone)
 
     d = datetime_tz.datetime_tz.smartparse("end of yesterday", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
     # FIXME: These above should actually test the equivalence
 
@@ -805,71 +893,84 @@ class TestDatetimeTZ(unittest.TestCase):
     # Test datetime string with timezone information,
     # also provide timezone argument
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00-05:00", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(-300))
+    self.assertEqual(d, pytz.FixedOffset(-300).localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00+0800", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00+08:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(480))
-
-    d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
-    self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d, pytz.FixedOffset(480).localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST-05:00", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 EST 2009", tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     # Test datetime string with timezone information,
     # no more timezone argument
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00-05:00")
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(-300))
+    self.assertEqual(d, pytz.FixedOffset(-300).localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00+0800")
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00+08:00")
     self.assertEqual(d.tzinfo, pytz.FixedOffset(480))
+    self.assertEqual(d, pytz.FixedOffset(480).localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST")
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("2009-11-09 23:00:00 EST-05:00")
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 EST 2009")
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2009-11-09 23:00:00-05:00")
-    self.assertEqual(d.tzinfo, pytz.timezone("US/Eastern"))
+    self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
+    self.assertEqual(d, pytz.timezone("US/Eastern").localize(
+        datetime.datetime(2009, 11, 9, 23, 0, 0)))
 
     # UTC, nice and easy
     d = datetime_tz.datetime_tz.smartparse("Tue Jul 03 06:00:01 UTC 2010")
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2010-07-03 06:00:01+00:00")
     self.assertEqual(d.tzinfo, pytz.timezone("UTC"))
 
     # Try Pacific standard time
     d = datetime_tz.datetime_tz.smartparse("2002-10-27 01:20:00 EST")
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2002-10-27 01:20:00-05:00")
     self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
 
     d = datetime_tz.datetime_tz.smartparse("2002-10-27 01:20:00 EDT")
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(str(d), "2002-10-27 01:20:00-04:00")
     self.assertEqual(d.tzinfo.zone, pytz.timezone("US/Eastern").zone)
 
@@ -881,68 +982,69 @@ class TestDatetimeTZ(unittest.TestCase):
     try:
       d = datetime_tz.datetime_tz.smartparse(
           "Tue Jul 03 06:00:01 US/Pacific 2010")
-      self.assert_(False)
+      self.assertTrue(False)
     except ValueError:
       pass
 
     # Make sure we get exceptions when invalid timezones are used.
     try:
       d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 Random 2009")
-      self.assert_(False)
+      self.assertTrue(False)
     except ValueError:
       pass
 
     try:
       d = datetime_tz.datetime_tz.smartparse("Mon Nov 09 23:00:00 XXX 2009")
-      self.assert_(False)
+      self.assertTrue(False)
     except ValueError:
       pass
 
     ###########################################################################
     toparse = datetime_tz.datetime_tz(2008, 6, 5)
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y/%m/%d"))
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, toparse)
 
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y-%m-%d"))
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, toparse)
 
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y%m%d"))
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d, toparse)
 
     d = datetime_tz.datetime_tz.smartparse(
         toparse.strftime("start of %d, %B %Y"))
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(
         d, toparse.replace(hour=0, minute=0, second=0, microsecond=0))
 
     toparse = datetime_tz.datetime_tz(2008, 12, 5, tzinfo=tz)
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y/%m/%d"), tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
     self.assertEqual(d, toparse)
 
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y-%m-%d"), tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
     self.assertEqual(d, toparse)
 
     d = datetime_tz.datetime_tz.smartparse(toparse.strftime("%Y%m%d"), tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
     self.assertEqual(d, toparse)
 
     d = datetime_tz.datetime_tz.smartparse(
         toparse.strftime("start of %d, %B %Y"), tz)
-    self.assert_(isinstance(d, datetime_tz.datetime_tz))
+    self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
     self.assertEqual(d.tzinfo.zone, tz.zone)
     self.assertEqual(
         d, toparse.replace(hour=0, minute=0, second=0, microsecond=0))
 
 
 class TestIterate(unittest.TestCase):
+
   def testBetween(self):
     iterate = datetime_tz.iterate
 
