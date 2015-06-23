@@ -111,7 +111,7 @@ class TestTimeZoneBase(unittest.TestCase):
   def assertTimezoneEqual(self, actual, expected):
     # For UTC we check actual identity
     if expected is pytz.utc:
-      self.assertIs(pytz.utc, actual)
+      self.assertTrue(pytz.utc is actual)
 
     # For very simple timezones, we assert the timezones are equal.
     elif isinstance(expected, pytz._FixedOffset):
