@@ -140,7 +140,7 @@ class TestTimeZoneBase(unittest.TestCase):
 class TestTimeZoneBaseTest(TestTimeZoneBase):
 
   def testAssertTimezoneCheckNumber(self):
-    self.assertLessEqual(len(self.TEST_POINTS), 600)
+    self.assertTrue(len(self.TEST_POINTS) < 600)
 
   def testAssertTimezoneEqualUTC(self):
     self.assertTimezoneEqual(pytz.utc, pytz.utc)
