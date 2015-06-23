@@ -6,6 +6,8 @@ python:
   - 3.4
   - nightly
 
+sudo: false
+
 cache:
   pip: true
   directories:
