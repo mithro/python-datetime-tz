@@ -99,8 +99,8 @@ class MockMe(object):
 class TestTimeZoneBase(unittest.TestCase):
 
   TEST_YEARS = (1950, 1994, 2019)
-  TEST_MONTHS = (2, 3, 4, 9, 10, 11)
-  TEST_DAYS = (1, 5, 24, 28)
+  TEST_MONTHS = (2, 6, 11)
+  TEST_DAYS = (1, 5, 28)
   TEST_HOURS = (0, 1, 2, 3, 23)
   TEST_MINUTES = (0, 59)
   TEST_SECONDS = (0, 59)
@@ -140,7 +140,7 @@ class TestTimeZoneBase(unittest.TestCase):
 class TestTimeZoneBaseTest(TestTimeZoneBase):
 
   def testAssertTimezoneCheckNumber(self):
-    self.assertLessEqual(len(self.TEST_POINTS), 1500)
+    self.assertLessEqual(len(self.TEST_POINTS), 600)
 
   def testAssertTimezoneEqualUTC(self):
     self.assertTimezoneEqual(pytz.utc, pytz.utc)
