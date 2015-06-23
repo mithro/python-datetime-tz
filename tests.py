@@ -446,9 +446,23 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertTimezoneEqual(d1.tzinfo, pytz.utc)
 
     # Creation from a datetime_tz object
+    d3 = datetime_tz.datetime_tz(d0)
+    self.assertTrue(isinstance(d3, datetime_tz.datetime_tz))
+    self.assertTimezoneEqual(d0.tzinfo, d3.tzinfo)
+    self.assertEqual(d0, d3)
+    self.assertFalse(d0 is d3)
+
     d3 = datetime_tz.datetime_tz(d1)
     self.assertTrue(isinstance(d3, datetime_tz.datetime_tz))
     self.assertTimezoneEqual(d1.tzinfo, d3.tzinfo)
+    self.assertEqual(d1, d3)
+    self.assertFalse(d1 is d3)
+
+    d3 = datetime_tz.datetime_tz(d2)
+    self.assertTrue(isinstance(d3, datetime_tz.datetime_tz))
+    self.assertTimezoneEqual(d2.tzinfo, d3.tzinfo)
+    self.assertEqual(d2, d3)
+    self.assertFalse(d2 is d3)
 
     # Creation from an already localized datetime object
     d4 = datetime.datetime(2008, 10, 1, 10, 10)
@@ -484,16 +498,6 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertTimezoneEqual(d7.tzinfo, pytz.timezone("US/Pacific"))
     self.assertEqual(d7.tzinfo._dst, datetime.timedelta(0, 3600))
 
-    datetime_tz.localtz_set(pytz.utc)
-    d0 = datetime_tz.datetime_tz(2008, 10, 1)
-    self.assertTrue(isinstance(d0, datetime_tz.datetime_tz))
-    self.assertTimezoneEqual(d0.tzinfo, pytz.utc)
-
-    d1 = datetime_tz.datetime_tz(d1)
-    self.assertTrue(isinstance(d1, datetime_tz.datetime_tz))
-    self.assertTimezoneEqual(d1.tzinfo, pytz.utc)
-    self.assertEqual(d0, d1)
-    self.assertFalse(d0 is d1)
 
   def testBadDates(self):
     # For example, 1:30am on 27th Oct 2002 happened twice in the US/Eastern
