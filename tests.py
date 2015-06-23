@@ -450,8 +450,8 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertTrue(isinstance(d3, datetime_tz.datetime_tz))
     self.assertTimezoneEqual(d1.tzinfo, d3.tzinfo)
 
-    # Creation from a datetime object
-    d4 = datetime.datetime.now()
+    # Creation from an already localized datetime object
+    d4 = datetime.datetime(2008, 10, 1, 10, 10)
     d4 = pytz.timezone("Australia/Sydney").localize(d4)
     d5 = datetime_tz.datetime_tz(d4)
     self.assertTrue(isinstance(d3, datetime_tz.datetime_tz))
