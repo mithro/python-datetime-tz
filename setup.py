@@ -26,7 +26,7 @@ import sys
 
 data = dict(
     name='python-datetime-tz',
-    version='0.2',
+    version='0.3',
     author='Tim Ansell',
     author_email='mithro@mithis.com',
     url='http://github.com/mithro/python-datetime-tz',
