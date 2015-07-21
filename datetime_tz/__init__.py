@@ -283,12 +283,6 @@ def _detect_timezone_etc_timezone():
     except IOError as eo:
       warnings.warn("Could not access your /etc/timezone file: %s" % eo)
 
-def _tz_cmp_dict(tz):
-    """Creates a dictionary of values for comparing tzinfo objects"""
-    attribs = [(attrib, getattr(tz, attrib)) for attrib in dir(tz) if not (attrib.startswith("__") or attrib in ("zone", "_tzinfos"))]
-    attribs = [(attrib, value) for attrib, value in attribs if not callable(value)]
-    return dict(attribs)
-
 def _load_local_tzinfo():
   tzdir = os.environ.get("TZDIR", "/usr/share/zoneinfo/posix")
 
