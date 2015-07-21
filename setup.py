@@ -19,7 +19,7 @@
 
 try:
     from setuptools import setup
-    from setuptools.command import sdist, bdist
+    from setuptools.command import sdist
 except ImportError:
     from distutils.core import setup
     from distutils.command import sdist, bdist
@@ -30,11 +30,6 @@ class update_sdist(sdist.sdist):
     def run(self):
         update_win32tz_map.update_stored_win32tz_map()
         sdist.sdist.run(self)
-
-class update_bdist(bdist.bdist):
-    def run(self):
-        update_win32tz_map.update_stored_win32tz_map()
-        bdist.bdist.run(self)
 
 import sys
 
@@ -60,7 +55,7 @@ A drop in replacement for Python's datetime module which cares deeply about time
     setup_requires=["Genshi"],
     py_modules=['datetime_tz','datetime_tz.pytz_abbr'],
     test_suite='tests',
-    cmdclass={'sdist': update_sdist, 'bdist': update_bdist},
+    cmdclass={'sdist': update_sdist},
 )
 
 if sys.version[:3] < '3.0':
