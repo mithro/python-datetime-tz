@@ -375,6 +375,8 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     # FIXME: Actually test this method sometime in the future.
     pass
 
+  # TODO: Test localize, localtz_name, require_timezone, windows timezones
+
 
 class TestDatetimeTZ(TestTimeZoneBase):
 
@@ -1161,6 +1163,9 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertTimezoneEqual(d.tzinfo, tz)
     self.assertEqual(
         d, toparse.replace(hour=0, minute=0, second=0, microsecond=0))
+
+  # TODO: Test get_naive, using _default_tzinfos
+  # TODO: Test that copy, deepcopy, astimezone, replace, __add__, __radd__, __sub__ and __rsub__ return subclass
 
 
 class TestIterate(unittest.TestCase):
