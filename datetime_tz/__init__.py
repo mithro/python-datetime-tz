@@ -913,7 +913,7 @@ for methodname in ["__add__", "__radd__", "__rsub__", "__sub__"]:
   assert methodname not in datetime_tz.__dict__
   # pypy 1.5.0 lacks __rsub__
   if hasattr(datetime.datetime, methodname):
-      _wrap_method(methodname)
+    _wrap_method(methodname)
 
 __all__ = [
     "datetime_tz", "detect_timezone", "iterate", "localtz",
