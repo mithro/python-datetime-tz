@@ -45,6 +45,7 @@ import unittest
 import warnings
 
 import dateutil
+import dateutil.parser
 import pytz
 
 import datetime_tz
@@ -374,9 +375,6 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
   def testPHPMethod(self):
     # FIXME: Actually test this method sometime in the future.
     pass
-
-  # TODO: Test localize, localtz_name, require_timezone, windows timezones
-
 
 class TestDatetimeTZ(TestTimeZoneBase):
 
@@ -1164,9 +1162,78 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertEqual(
         d, toparse.replace(hour=0, minute=0, second=0, microsecond=0))
 
-  # TODO: Test get_naive, using _default_tzinfos
-  # TODO: Test that copy, deepcopy, astimezone, replace, __add__, __radd__, __sub__ and __rsub__ return subclass
+  def testLocalize(self):
+    # Test naive to sydney and utc
+    naive_dt = datetime.datetime(2015, 07, 11, 12, 34, 54)
+    ldt = datetime_tz.localize(naive_dt)
+    self.assertTrue(isinstance(ldt, datetime_tz.datetime_tz))
+    self.assertEqual(ldt.year, 2015)
+    self.assertEqual(ldt.month, 7)
+    self.assertEqual(ldt.day, 11)
+    self.assertEqual(ldt.hour, 12)
+    self.assertEqual(ldt.minute, 34)
+    self.assertEqual(ldt.second, 54)
+    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Australia/Sydney'))
+    datetime_tz.localtz_set('UTC')
+    ldt = datetime_tz.localize(naive_dt)
+    self.assertTimezoneEqual(ldt.tzinfo, pytz.UTC)
 
+    # Test joburg to sydney
+    datetime_tz.localtz_set('Australia/Sydney')
+    joburg_dt = datetime_tz.datetime_tz(2015, 07, 11, 12, 34, 54, "Africa/Johannesburg")
+    ldt = datetime_tz.localize(joburg_dt)
+    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Australia/Sydney'))
+    self.assertEqual(ldt.hour, 20)
+
+    # Test aware datetime to datetime_tz
+    joburg_dt = datetime.datetime(2015, 07, 11, 12, 34, 54, tzinfo=pytz.timezone("Africa/Johannesburg"))
+    ldt = datetime_tz.localize(joburg_dt)
+    self.assertTrue(isinstance(ldt, datetime_tz.datetime_tz))
+    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Australia/Sydney'))
+    self.assertEqual(ldt.hour, 20)
+
+    # Test joburg not touched on no force_local
+    joburg_dt = datetime.datetime(2015, 07, 11, 12, 34, 54, tzinfo=pytz.timezone("Africa/Johannesburg"))
+    ldt = datetime_tz.localize(joburg_dt, force_to_local=False)
+    self.assertTrue(isinstance(ldt, datetime_tz.datetime_tz))
+    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Africa/Johannesburg'))
+    self.assertEqual(ldt.hour, 12)
+
+  def testLocalTzName(self):
+    datetime_tz.localtz_set('UTC')
+    self.assertEqual(datetime_tz.localtz_name(), 'UTC')
+    datetime_tz.localtz_set('Australia/Sydney')
+    self.assertEqual(datetime_tz.localtz_name(), 'Australia/Sydney')
+
+  def testRequireTimezone(self):
+    datetime_tz.require_timezone('Australia/Sydney')
+    self.assertRaises(AssertionError, datetime_tz.require_timezone, 'UTC')
+    datetime_tz.localtz_set('UTC')
+    datetime_tz.require_timezone('UTC')
+    self.assertRaises(AssertionError, datetime_tz.require_timezone, 'Australia/Sydney')
+    datetime_tz.localtz_set('Australia/Sydney')
+
+  def testWindowsTimezones(self):
+    # TODO: Mock test this works, and really test it produces something if on Windows
+    pass
+
+  def testGetNaive(self):
+    # Test datetime_tz, naive datetime and timezoned datetime all produce naive
+    naive_dt = datetime.datetime(2015, 07, 11, 12, 34, 54)
+    dtz = datetime_tz.datetime_tz(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    dtnz = datetime.datetime(2015, 07, 11, 12, 34, 54, tzinfo=pytz.timezone("Australia/Sydney"))
+
+    self.assertEqual(naive_dt, datetime_tz.get_naive(naive_dt))
+    self.assertEqual(naive_dt, datetime_tz.get_naive(dtz))
+    self.assertEqual(naive_dt, datetime_tz.get_naive(dtnz))
+
+  def testDateutilParseTzinfos(self):
+    parsed_dt = dateutil.parser.parse("Thu Sep 25 10:36:28 UTC 2003", tzinfos=datetime_tz._default_tzinfos())
+    self.assertTimezoneEqual(parsed_dt.tzinfo, pytz.UTC)
+
+class TestSubclass(TestTimeZoneBase):
+  # TODO: Test that copy, deepcopy, astimezone, replace, __add__, __radd__, __sub__ and __rsub__ return subclass
+  pass
 
 class TestIterate(unittest.TestCase):
 
