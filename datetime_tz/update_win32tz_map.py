@@ -5,7 +5,10 @@ import urllib2
 import StringIO
 import genshi.input
 import hashlib
-from datetime_tz import win32tz_map
+try:
+    from datetime_tz import win32tz_map
+except ImportError:
+    win32tz_map = None
 
 _CLDR_WINZONES_URL = "http://www.unicode.org/repos/cldr/trunk/common/supplemental/windowsZones.xml"
 
@@ -16,21 +19,25 @@ def download_cldr_win32tz_map_xml():
 def create_win32tz_map(windows_zones_xml):
     """Creates a map between Windows and Olson timezone names based on the cldr
     xml mapping. Yields win32_name, olson_name, comment tuples"""
-    just_closed = None
+    coming_comment = None
+    win32_name = None
     parser = genshi.input.XMLParser(StringIO.StringIO(windows_zones_xml))
     map_zones = {}
     zone_comments = {}
     for kind, data, _ in parser:
         if kind == genshi.core.START and str(data[0]) == 'mapZone':
             attrs = data[1]
-            win32_name, olson_name = attrs.get("other"), attrs.get("type")
+            win32_name, olson_name = attrs.get("other"), attrs.get("type").split(" ")[0]
             map_zones[win32_name] = olson_name
-        elif kind == genshi.core.END and str(data) == 'mapZone':
-            just_closed = win32_name
-        elif kind == genshi.core.COMMENT and just_closed:
-            zone_comments[just_closed] = data.strip()
+        elif kind == genshi.core.END and str(data) == 'mapZone' and win32_name:
+            if coming_comment:
+                zone_comments[win32_name] = coming_comment
+                coming_comment = None
+            win32_name = None
+        elif kind == genshi.core.COMMENT:
+            coming_comment = data.strip()
         elif kind in (genshi.core.START, genshi.core.END, genshi.core.COMMENT):
-            just_closed = None
+            coming_comment = None
     for win32_name in sorted(map_zones):
         yield (win32_name, map_zones[win32_name], zone_comments.get(win32_name, None))
 
@@ -41,10 +48,11 @@ def update_stored_win32tz_map():
     map_zones = create_win32tz_map(windows_zones_xml)
     map_dir = os.path.dirname(os.path.abspath(__file__))
     map_filename = os.path.join(map_dir, "win32tz_map.py")
-    reload(win32tz_map)
-    current_hash = getattr(win32tz_map, "source_hash", None)
-    if current_hash == source_hash:
-        return False
+    if os.path.exists(map_filename):
+        reload(win32tz_map)
+        current_hash = getattr(win32tz_map, "source_hash", None)
+        if current_hash == source_hash:
+            return False
     map_file = open(map_filename, "w")
     comment = "Map between Windows and Olson timezones taken from %s" % (_CLDR_WINZONES_URL, )
     comment2 = "Generated automatically from datetime_tz.py"
