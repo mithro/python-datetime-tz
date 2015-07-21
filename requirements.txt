@@ -1,2 +1,2 @@
 python-dateutil
-pytz
+pytz>=2007g
