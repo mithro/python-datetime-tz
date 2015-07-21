@@ -106,27 +106,27 @@ def _tzinfome(tzinfo):
 _localtz = None
 
 def localize(dt, force_to_local=True):
-    """Localize a datetime to the local timezone
+  """Localize a datetime to the local timezone
 
-    If dt is naive, returns the same datetime with the local timezone
-    Else, uses astimezone to convert"""
-    if not isinstance(dt, datetime_tz):
-        if not dt.tzinfo:
-            return datetime_tz(dt, tzinfo=localtz())
-        dt = datetime_tz(dt)
-    if force_to_local:
-        return dt.astimezone(localtz())
-    return dt
+  If dt is naive, returns the same datetime with the local timezone
+  Else, uses astimezone to convert"""
+  if not isinstance(dt, datetime_tz):
+    if not dt.tzinfo:
+      return datetime_tz(dt, tzinfo=localtz())
+    dt = datetime_tz(dt)
+  if force_to_local:
+    return dt.astimezone(localtz())
+  return dt
 
 def get_naive(dt):
-    """Gets a naive datetime from a datetime.
+  """Gets a naive datetime from a datetime.
 
-    datetime_tz objects can't just have tzinfo replaced with None - you need to call asdatetime"""
-    if not dt.tzinfo:
-        return dt
-    if hasattr(dt, "asdatetime"):
-        return dt.asdatetime()
-    return dt.replace(tzinfo=None)
+  datetime_tz objects can't just have tzinfo replaced with None - you need to call asdatetime"""
+  if not dt.tzinfo:
+    return dt
+  if hasattr(dt, "asdatetime"):
+    return dt.asdatetime()
+  return dt.replace(tzinfo=None)
 
 def localtz():
   """Get the local timezone.
@@ -141,8 +141,8 @@ def localtz():
   return _localtz
 
 def localtz_name():
-   """Returns the name of the local timezone"""
-   return str(localtz())
+  """Returns the name of the local timezone"""
+  return str(localtz())
 
 def localtz_set(timezone):
   """Set the local timezone."""
@@ -151,41 +151,41 @@ def localtz_set(timezone):
   _localtz = _tzinfome(timezone)
 
 def require_timezone(zone):
-    assert localtz().zone == zone, "Please set your local timezone to %(zone)s (either in the machine, or on Linux by exporting TZ=%(zone)s" % {"zone": zone}
+  assert localtz().zone == zone, "Please set your local timezone to %(zone)s (either in the machine, or on Linux by exporting TZ=%(zone)s" % {"zone": zone}
 
 # The following code is a workaround to GetDynamicTimeZoneInformation not being present in win32timezone
 
 class SYSTEMTIME_c(ctypes.Structure):
-    """ctypes structure for SYSTEMTIME"""
-    _fields_ = [
-        ('year', ctypes.c_ushort),
-        ('month', ctypes.c_ushort),
-        ('day_of_week', ctypes.c_ushort),
-        ('day', ctypes.c_ushort),
-        ('hour', ctypes.c_ushort),
-        ('minute', ctypes.c_ushort),
-        ('second', ctypes.c_ushort),
-        ('millisecond', ctypes.c_ushort),
-    ]
+  """ctypes structure for SYSTEMTIME"""
+  _fields_ = [
+    ('year', ctypes.c_ushort),
+    ('month', ctypes.c_ushort),
+    ('day_of_week', ctypes.c_ushort),
+    ('day', ctypes.c_ushort),
+    ('hour', ctypes.c_ushort),
+    ('minute', ctypes.c_ushort),
+    ('second', ctypes.c_ushort),
+    ('millisecond', ctypes.c_ushort),
+  ]
 
 class TZI_c(ctypes.Structure):
-    """ctypes structure for TIME_ZONE_INFORMATION"""
-    _fields_ = [
-            ('bias', ctypes.c_long),
-            ('standard_name', ctypes.c_wchar*32),
-            ('standard_start', SYSTEMTIME_c),
-            ('standard_bias', ctypes.c_long),
-            ('daylight_name', ctypes.c_wchar*32),
-            ('daylight_start', SYSTEMTIME_c),
-            ('daylight_bias', ctypes.c_long),
-    ]
+  """ctypes structure for TIME_ZONE_INFORMATION"""
+  _fields_ = [
+    ('bias', ctypes.c_long),
+    ('standard_name', ctypes.c_wchar*32),
+    ('standard_start', SYSTEMTIME_c),
+    ('standard_bias', ctypes.c_long),
+    ('daylight_name', ctypes.c_wchar*32),
+    ('daylight_start', SYSTEMTIME_c),
+    ('daylight_bias', ctypes.c_long),
+  ]
 
 class DTZI_c(ctypes.Structure):
-    """ctypes structure for DYNAMIC_TIME_ZONE_INFORMATION"""
-    _fields_ = TZI_c._fields_ + [
-            ('key_name', ctypes.c_wchar*128),
-            ('dynamic_daylight_time_disabled', ctypes.c_bool),
-    ]
+  """ctypes structure for DYNAMIC_TIME_ZONE_INFORMATION"""
+  _fields_ = TZI_c._fields_ + [
+    ('key_name', ctypes.c_wchar*128),
+    ('dynamic_daylight_time_disabled', ctypes.c_bool),
+  ]
 
 # Global variable for mapping Window timezone names in the current locale to english ones. Initialized when needed
 win32timezone_to_en = {}
@@ -205,15 +205,15 @@ def _detect_timezone_windows():
   # code is for daylight savings: 0 means disabled/not defined, 1 means enabled but inactive, 2 means enabled and active
   win32tz_key_name = tzi.key_name
   if not win32tz_key_name:
-      # we're on Windows before Vista/Server 2008 - need to look up the standard_name in the registry
-      # This will not work in some multilingual setups if running in a language other than the operating system default
-      win32tz_name = tzi.standard_name
-      if not win32timezone_to_en:
-          win32timezone_to_en = dict(win32timezone.TimeZoneInfo._get_indexed_time_zone_keys("Std"))
-      win32tz_key_name = win32timezone_to_en.get(win32tz_name, win32tz_name)
+    # we're on Windows before Vista/Server 2008 - need to look up the standard_name in the registry
+    # This will not work in some multilingual setups if running in a language other than the operating system default
+    win32tz_name = tzi.standard_name
+    if not win32timezone_to_en:
+      win32timezone_to_en = dict(win32timezone.TimeZoneInfo._get_indexed_time_zone_keys("Std"))
+    win32tz_key_name = win32timezone_to_en.get(win32tz_name, win32tz_name)
   olson_name = win32tz_map.win32timezones.get(win32tz_key_name, None)
   if not olson_name:
-      return None
+    return None
   return pytz.timezone(olson_name)
 
 def detect_timezone():
