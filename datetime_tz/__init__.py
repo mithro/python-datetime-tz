@@ -658,11 +658,8 @@ class datetime_tz(datetime.datetime):
     elif toparselower == "yesterday":
       dt -= datetime.timedelta(days=1)
 
-    elif toparselower == "tomorrow":
-      dt += datetime.timedelta(days=1)
-
-    elif toparselower == "tommorrow":
-      #This is spelt wrong, but code out there might be depending on it working
+    elif toparselower in ("tomorrow", "tommorrow"):
+      # tommorrow is spelled wrong, but code out there might be depending on it working
       dt += datetime.timedelta(days=1)
 
     elif "ago" in toparselower:
