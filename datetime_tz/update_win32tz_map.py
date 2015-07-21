@@ -1,21 +1,26 @@
+"""This script updates win32tz_map based on the data at the URL below"""
+
 import os
 import urllib2
 import StringIO
 import genshi.input
 import hashlib
-import win32tz_map
+from datetime_tz import win32tz_map
+
+_CLDR_WINZONES_URL = "http://www.unicode.org/repos/cldr/trunk/common/supplemental/windowsZones.xml"
 
 def download_cldr_win32tz_map_xml():
     """Downloads the xml that maps between Windows and Olson timezone names"""
-    return urllib2.urlopen("http://www.unicode.org/repos/cldr/trunk/common/supplemental/windowsZones.xml").read()
+    return urllib2.urlopen(_CLDR_WINZONES_URL).read()
 
 def create_win32tz_map(windows_zones_xml):
-    """Creates a map between Windows and Olson timezone names based on the cldr xml mapping. Yields win32_name, olson_name, comment tuples"""
+    """Creates a map between Windows and Olson timezone names based on the cldr
+    xml mapping. Yields win32_name, olson_name, comment tuples"""
     just_closed = None
     parser = genshi.input.XMLParser(StringIO.StringIO(windows_zones_xml))
     map_zones = {}
     zone_comments = {}
-    for kind, data, pos in parser:
+    for kind, data, _ in parser:
         if kind == genshi.core.START and str(data[0]) == 'mapZone':
             attrs = data[1]
             win32_name, olson_name = attrs.get("other"), attrs.get("type")
@@ -41,7 +46,7 @@ def update_stored_win32tz_map():
     if current_hash == source_hash:
         return False
     map_file = open(map_filename, "w")
-    comment = "Map between Windows an Olson timezones taken from http://www.unicode.org/repos/cldr/trunk/common/supplemental/windowsZones.xml"
+    comment = "Map between Windows and Olson timezones taken from %s" % (_CLDR_WINZONES_URL, )
     comment2 = "Generated automatically from datetime_tz.py"
     map_file.write("'''%s\n" % comment)
     map_file.write("%s'''\n" % comment2)
@@ -55,3 +60,4 @@ def update_stored_win32tz_map():
 
 if __name__ == '__main__':
     update_stored_win32tz_map()
+
