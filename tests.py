@@ -44,10 +44,16 @@ import random
 import unittest
 import warnings
 import copy
+import sys
 
 import dateutil
 import dateutil.parser
 import pytz
+import ctypes
+try:
+  import win32timezone
+except ImportError:
+  win32timezone = None
 
 import datetime_tz
 
@@ -378,8 +384,50 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     pass
 
   def testWindowsTimezones(self):
-    # FIXME: Mock test this works, and really test it produces something if on Windows
-    pass
+    if sys.platform == "win32":
+      self.assertNotEqual(datetime_tz._detect_timezone_windows(), None)
+
+    class kernel32_old(object):
+      @staticmethod
+      def GetTimeZoneInformation(tzi_byref):
+        tzi = tzi_byref._obj
+        tzi.bias = -120
+        tzi.standard_name = "South Africa Standard Time"
+        tzi.standard_start = datetime_tz.SYSTEMTIME_c()
+        tzi.standard_start.year = tzi.standard_start.month = tzi.standard_start.day_of_week = \
+          tzi.standard_start.day = tzi.standard_start.hour = tzi.standard_start.minute = tzi.standard_start.second\
+                = tzi.standard_start.millisecond = 0
+        tzi.standard_bias = 0
+        tzi.daylight_name = 'South Africa Daylight Time'
+        tzi.daylight_bias = -60
+        tzi.daylight_start.year = tzi.daylight_start.month = tzi.daylight_start.day_of_week = \
+          tzi.daylight_start.day = tzi.daylight_start.hour = tzi.daylight_start.minute = tzi.daylight_start.second \
+          = tzi.daylight_start.millisecond = 0
+        return 0
+
+    class _kernel32(kernel32_old):
+      @staticmethod
+      def GetDynamicTimeZoneInformation(tzi_byref):
+        kernel32_old.GetTimeZoneInformation(tzi_byref)
+        tzi = tzi_byref._obj
+        tzi.key_name = 'South Africa Standard Time'
+        tzi.dynamic_daylight_time_disabled = False
+
+
+    class windll(object):
+      kernel32 = _kernel32
+
+    if hasattr(ctypes, 'windll'):
+      self.mocked("ctypes.windll", windll)
+    else:
+      ctypes.windll = windll
+    self.assertTimezoneEqual(datetime_tz._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
+
+    windll.kernel32 = kernel32_old
+    if win32timezone is None:
+      self.assertIsNone(datetime_tz._detect_timezone_windows())
+    else:
+      self.assertTimezoneEqual(datetime_tz._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
 
 class TestDatetimeTZ(TestTimeZoneBase):
 
