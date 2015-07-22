@@ -43,6 +43,7 @@ import os
 import random
 import unittest
 import warnings
+import copy
 
 import dateutil
 import dateutil.parser
@@ -374,6 +375,10 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
 
   def testPHPMethod(self):
     # FIXME: Actually test this method sometime in the future.
+    pass
+
+  def testWindowsTimezones(self):
+    # FIXME: Mock test this works, and really test it produces something if on Windows
     pass
 
 class TestDatetimeTZ(TestTimeZoneBase):
@@ -1213,10 +1218,6 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertRaises(AssertionError, datetime_tz.require_timezone, 'Australia/Sydney')
     datetime_tz.localtz_set('Australia/Sydney')
 
-  def testWindowsTimezones(self):
-    # TODO: Mock test this works, and really test it produces something if on Windows
-    pass
-
   def testGetNaive(self):
     # Test datetime_tz, naive datetime and timezoned datetime all produce naive
     naive_dt = datetime.datetime(2015, 07, 11, 12, 34, 54)
@@ -1231,9 +1232,42 @@ class TestDatetimeTZ(TestTimeZoneBase):
     parsed_dt = dateutil.parser.parse("Thu Sep 25 10:36:28 UTC 2003", tzinfos=datetime_tz._default_tzinfos())
     self.assertTimezoneEqual(parsed_dt.tzinfo, pytz.UTC)
 
-class TestSubclass(TestTimeZoneBase):
-  # TODO: Test that copy, deepcopy, astimezone, replace, __add__, __radd__, __sub__ and __rsub__ return subclass
+class datetime_tz_test_subclass(datetime_tz.datetime_tz):
   pass
+
+class TestSubclass(TestTimeZoneBase):
+  def test_copy(self):
+    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    dtz_copy = copy.copy(dtz)
+    self.assertTrue(isinstance(dtz_copy, datetime_tz_test_subclass))
+    self.assertEqual(dtz, dtz_copy)
+
+  def test_deepcopy(self):
+    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    dtz_copy = copy.deepcopy(dtz)
+    self.assertTrue(isinstance(dtz_copy, datetime_tz_test_subclass))
+    self.assertEqual(dtz, dtz_copy)
+
+  def test_astimezone(self):
+    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    self.assertTrue(isinstance(dtz.astimezone(pytz.UTC), datetime_tz_test_subclass))
+
+  def test_replace(self):
+    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    self.assertTrue(isinstance(dtz.replace(year=2014), datetime_tz_test_subclass))
+
+  def test_add(self):
+    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    self.assertTrue(isinstance(dtz + datetime.timedelta(days=1), datetime_tz_test_subclass))
+
+  def test_radd(self):
+    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    self.assertTrue(isinstance(datetime.timedelta(days=1) + dtz, datetime_tz_test_subclass))
+
+  def test_sub(self):
+    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    self.assertTrue(isinstance(dtz - datetime.timedelta(days=1), datetime_tz_test_subclass))
+
 
 class TestIterate(unittest.TestCase):
 
