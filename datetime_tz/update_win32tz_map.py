@@ -1,8 +1,19 @@
 """This script updates win32tz_map based on the data at the URL below"""
 
 import os
-import urllib2
-import StringIO
+try:
+    import urllib.request as urllib2
+except ImportError:
+    import urllib2
+try:
+    from io import StringIO
+except ImportError:
+    import StringIO
+
+try:
+    from importlib import reload
+except ImportError:
+    pass
 import genshi.input
 import hashlib
 try:
