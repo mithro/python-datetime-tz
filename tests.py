@@ -425,7 +425,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
 
     windll.kernel32 = kernel32_old
     if win32timezone is None:
-      self.assertIsNone(datetime_tz._detect_timezone_windows())
+      self.assertEqual(datetime_tz._detect_timezone_windows(), None)
     else:
       self.assertTimezoneEqual(datetime_tz._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
 
