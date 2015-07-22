@@ -211,6 +211,9 @@ def _detect_timezone_windows():
   kernel32 = ctypes.windll.kernel32
   getter = kernel32.GetTimeZoneInformation
   getter = getattr(kernel32, 'GetDynamicTimeZoneInformation', getter)
+  # code is for daylight savings: 0 means disabled/not defined, 1 means enabled but inactive, 2 means enabled and active
+  code = getter(ctypes.byref(tzi))
+
   win32tz_key_name = tzi.key_name
   if not win32tz_key_name:
     # we're on Windows before Vista/Server 2008 - need to look up the standard_name in the registry
