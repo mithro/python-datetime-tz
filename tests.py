@@ -1169,10 +1169,10 @@ class TestDatetimeTZ(TestTimeZoneBase):
 
   def testLocalize(self):
     # Test naive to sydney and utc
-    naive_dt = datetime.datetime(2015, 07, 11, 12, 34, 54)
+    naive_dt = datetime.datetime(2010, 07, 11, 12, 34, 54)
     ldt = datetime_tz.localize(naive_dt)
     self.assertTrue(isinstance(ldt, datetime_tz.datetime_tz))
-    self.assertEqual(ldt.year, 2015)
+    self.assertEqual(ldt.year, 2010)
     self.assertEqual(ldt.month, 7)
     self.assertEqual(ldt.day, 11)
     self.assertEqual(ldt.hour, 12)
@@ -1185,23 +1185,23 @@ class TestDatetimeTZ(TestTimeZoneBase):
 
     # Test joburg to sydney
     datetime_tz.localtz_set('Australia/Sydney')
-    joburg_dt = datetime_tz.datetime_tz(2015, 07, 11, 12, 34, 54, "Africa/Johannesburg")
+    joburg_dt = datetime_tz.datetime_tz(2010, 07, 11, 12, 34, 54, "Africa/Johannesburg")
     ldt = datetime_tz.localize(joburg_dt)
     self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Australia/Sydney'))
     self.assertEqual(ldt.hour, 20)
 
     # Test aware datetime to datetime_tz
-    joburg_dt = datetime.datetime(2015, 07, 11, 12, 34, 54, tzinfo=pytz.timezone("Africa/Johannesburg"))
-    ldt = datetime_tz.localize(joburg_dt)
+    utc_dt = datetime.datetime(2010, 07, 11, 12, 34, 54, tzinfo=pytz.utc)
+    ldt = datetime_tz.localize(utc_dt)
     self.assertTrue(isinstance(ldt, datetime_tz.datetime_tz))
     self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Australia/Sydney'))
-    self.assertEqual(ldt.hour, 20)
+    self.assertEqual(ldt.hour, 22)
 
     # Test joburg not touched on no force_local
-    joburg_dt = datetime.datetime(2015, 07, 11, 12, 34, 54, tzinfo=pytz.timezone("Africa/Johannesburg"))
+    joburg_dt = datetime.datetime(2010, 07, 11, 12, 34, 54, tzinfo=pytz.utc)
     ldt = datetime_tz.localize(joburg_dt, force_to_local=False)
     self.assertTrue(isinstance(ldt, datetime_tz.datetime_tz))
-    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Africa/Johannesburg'))
+    self.assertTimezoneEqual(ldt.tzinfo, pytz.utc)
     self.assertEqual(ldt.hour, 12)
 
   def testLocalTzName(self):
