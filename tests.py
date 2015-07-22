@@ -1217,7 +1217,7 @@ class TestDatetimeTZ(TestTimeZoneBase):
 
   def testLocalize(self):
     # Test naive to sydney and utc
-    naive_dt = datetime.datetime(2010, 07, 11, 12, 34, 54)
+    naive_dt = datetime.datetime(2010, 7, 11, 12, 34, 54)
     ldt = datetime_tz.localize(naive_dt)
     self.assertTrue(isinstance(ldt, datetime_tz.datetime_tz))
     self.assertEqual(ldt.year, 2010)
@@ -1233,20 +1233,20 @@ class TestDatetimeTZ(TestTimeZoneBase):
 
     # Test joburg to sydney
     datetime_tz.localtz_set('Australia/Sydney')
-    joburg_dt = datetime_tz.datetime_tz(2010, 07, 11, 12, 34, 54, "Africa/Johannesburg")
+    joburg_dt = datetime_tz.datetime_tz(2010, 7, 11, 12, 34, 54, "Africa/Johannesburg")
     ldt = datetime_tz.localize(joburg_dt)
     self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Australia/Sydney'))
     self.assertEqual(ldt.hour, 20)
 
     # Test aware datetime to datetime_tz
-    utc_dt = datetime.datetime(2010, 07, 11, 12, 34, 54, tzinfo=pytz.utc)
+    utc_dt = datetime.datetime(2010, 7, 11, 12, 34, 54, tzinfo=pytz.utc)
     ldt = datetime_tz.localize(utc_dt)
     self.assertTrue(isinstance(ldt, datetime_tz.datetime_tz))
     self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Australia/Sydney'))
     self.assertEqual(ldt.hour, 22)
 
     # Test joburg not touched on no force_local
-    joburg_dt = datetime.datetime(2010, 07, 11, 12, 34, 54, tzinfo=pytz.utc)
+    joburg_dt = datetime.datetime(2010, 7, 11, 12, 34, 54, tzinfo=pytz.utc)
     ldt = datetime_tz.localize(joburg_dt, force_to_local=False)
     self.assertTrue(isinstance(ldt, datetime_tz.datetime_tz))
     self.assertTimezoneEqual(ldt.tzinfo, pytz.utc)
@@ -1268,9 +1268,9 @@ class TestDatetimeTZ(TestTimeZoneBase):
 
   def testGetNaive(self):
     # Test datetime_tz, naive datetime and timezoned datetime all produce naive
-    naive_dt = datetime.datetime(2015, 07, 11, 12, 34, 54)
-    dtz = datetime_tz.datetime_tz(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
-    dtnz = datetime.datetime(2015, 07, 11, 12, 34, 54, tzinfo=pytz.timezone("Australia/Sydney"))
+    naive_dt = datetime.datetime(2015, 7, 11, 12, 34, 54)
+    dtz = datetime_tz.datetime_tz(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
+    dtnz = datetime.datetime(2015, 7, 11, 12, 34, 54, tzinfo=pytz.timezone("Australia/Sydney"))
 
     self.assertEqual(naive_dt, datetime_tz.get_naive(naive_dt))
     self.assertEqual(naive_dt, datetime_tz.get_naive(dtz))
@@ -1285,35 +1285,35 @@ class datetime_tz_test_subclass(datetime_tz.datetime_tz):
 
 class TestSubclass(TestTimeZoneBase):
   def test_copy(self):
-    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
     dtz_copy = copy.copy(dtz)
     self.assertTrue(isinstance(dtz_copy, datetime_tz_test_subclass))
     self.assertEqual(dtz, dtz_copy)
 
   def test_deepcopy(self):
-    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
     dtz_copy = copy.deepcopy(dtz)
     self.assertTrue(isinstance(dtz_copy, datetime_tz_test_subclass))
     self.assertEqual(dtz, dtz_copy)
 
   def test_astimezone(self):
-    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
     self.assertTrue(isinstance(dtz.astimezone(pytz.UTC), datetime_tz_test_subclass))
 
   def test_replace(self):
-    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
     self.assertTrue(isinstance(dtz.replace(year=2014), datetime_tz_test_subclass))
 
   def test_add(self):
-    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
     self.assertTrue(isinstance(dtz + datetime.timedelta(days=1), datetime_tz_test_subclass))
 
   def test_radd(self):
-    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
     self.assertTrue(isinstance(datetime.timedelta(days=1) + dtz, datetime_tz_test_subclass))
 
   def test_sub(self):
-    dtz = datetime_tz_test_subclass(2015, 07, 11, 12, 34, 54, "Australia/Sydney")
+    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
     self.assertTrue(isinstance(dtz - datetime.timedelta(days=1), datetime_tz_test_subclass))
 
 
