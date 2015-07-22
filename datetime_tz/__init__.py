@@ -226,6 +226,8 @@ def _detect_timezone_windows():
   olson_name = win32tz_map.win32timezones.get(win32tz_key_name, None)
   if not olson_name:
     return None
+  if not isinstance(olson_name, str):
+    olson_name = olson_name.encode('ascii')
   return pytz.timezone(olson_name)
 
 def detect_timezone():
