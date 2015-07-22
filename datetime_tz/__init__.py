@@ -201,10 +201,6 @@ win32timezone_to_en = {}
 def _detect_timezone_windows():
   # pylint: disable=global-statement
   global win32timezone_to_en
-  try:
-    import win32timezone
-  except ImportError:
-    return None
 
   # Try and fetch the key_name for the timezone using Get(Dynamic)TimeZoneInformation
   tzi = DTZI_c()
@@ -216,6 +212,10 @@ def _detect_timezone_windows():
 
   win32tz_key_name = tzi.key_name
   if not win32tz_key_name:
+    try:
+      import win32timezone
+    except ImportError:
+      return None
     # we're on Windows before Vista/Server 2008 - need to look up the standard_name in the registry
     # This will not work in some multilingual setups if running in a language
     # other than the operating system default
