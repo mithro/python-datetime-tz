@@ -2,7 +2,12 @@ __author__ = 'davidm'
 
 import ctypes
 import pytz
-from datetime_tz import win32tz_map
+import warnings
+
+try:
+    from datetime_tz import win32tz_map
+except ImportError:
+    warnings.warn("win32tz_map is not generated yet - hopefully this only happens in a build")
 
 # The following code is a workaround to
 # GetDynamicTimeZoneInformation not being present in win32timezone
