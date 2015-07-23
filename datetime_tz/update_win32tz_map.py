@@ -8,7 +8,7 @@ except ImportError:
 try:
     from io import StringIO
 except ImportError:
-    import StringIO
+    from StringIO import StringIO
 
 try:
     from importlib import reload
@@ -32,7 +32,7 @@ def create_win32tz_map(windows_zones_xml):
     xml mapping. Yields win32_name, olson_name, comment tuples"""
     coming_comment = None
     win32_name = None
-    parser = genshi.input.XMLParser(StringIO.StringIO(windows_zones_xml))
+    parser = genshi.input.XMLParser(StringIO(windows_zones_xml))
     map_zones = {}
     zone_comments = {}
     for kind, data, _ in parser:
@@ -56,6 +56,8 @@ def update_stored_win32tz_map():
     """downloads the cldr win32 timezone map and stores it in win32tz_map.py"""
     windows_zones_xml = download_cldr_win32tz_map_xml()
     source_hash = hashlib.md5(windows_zones_xml).hexdigest()
+    if hasattr(windows_zones_xml, 'decode'):
+        windows_zones_xml = windows_zones_xml.decode('utf-8')
     map_zones = create_win32tz_map(windows_zones_xml)
     map_dir = os.path.dirname(os.path.abspath(__file__))
     map_filename = os.path.join(map_dir, "win32tz_map.py")
