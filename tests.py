@@ -57,6 +57,9 @@ except ImportError:
 
 import datetime_tz
 
+# To test these, we still import them
+from datetime_tz import detect_windows
+
 try:
   # pylint: disable=g-import-not-at-top,unused-import
   import __builtin__ as builtins
@@ -385,7 +388,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
 
   def testWindowsTimezones(self):
     if sys.platform == "win32":
-      self.assertNotEqual(datetime_tz._detect_timezone_windows(), None)
+      self.assertNotEqual(detect_windows._detect_timezone_windows(), None)
 
     class kernel32_old(object):
       @staticmethod
@@ -393,7 +396,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
         tzi = tzi_byref._obj
         tzi.bias = -120
         tzi.standard_name = "South Africa Standard Time"
-        tzi.standard_start = datetime_tz.SYSTEMTIME_c()
+        tzi.standard_start = detect_windows.SYSTEMTIME_c()
         tzi.standard_start.year = tzi.standard_start.month = tzi.standard_start.day_of_week = \
           tzi.standard_start.day = tzi.standard_start.hour = tzi.standard_start.minute = tzi.standard_start.second\
                 = tzi.standard_start.millisecond = 0
@@ -421,13 +424,13 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
       self.mocked("ctypes.windll", windll)
     else:
       ctypes.windll = windll
-    self.assertTimezoneEqual(datetime_tz._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
+    self.assertTimezoneEqual(detect_windows._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
 
     windll.kernel32 = kernel32_old
     if win32timezone is None:
-      self.assertEqual(datetime_tz._detect_timezone_windows(), None)
+      self.assertEqual(detect_windows._detect_timezone_windows(), None)
     else:
-      self.assertTimezoneEqual(datetime_tz._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
+      self.assertTimezoneEqual(detect_windows._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
 
 class TestDatetimeTZ(TestTimeZoneBase):
 
