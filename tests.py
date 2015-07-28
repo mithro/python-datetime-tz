@@ -242,8 +242,6 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     self.assertEqual(None, tzinfo)
 
   def testEtcTimezoneMethod(self):
-    if sys.platform == "win32":
-      raise self.skipTest("/etc timezone method will never work on Windows")
     def os_path_exists_fake(filename, os_path_exists=os.path.exists):
       if filename == "/etc/timezone":
         return True
@@ -281,6 +279,8 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     self.assertEqual(None, tzinfo)
 
   def testEtcLocaltimeMethodSingleMatch(self):
+      if sys.platform == "win32":
+          raise self.skipTest("/etc timezone method will never work on Windows")
     test_zonedata_sydney = os.path.join(
         os.path.dirname(__file__), "test_zonedata_sydney")
     f = open(test_zonedata_sydney, "rb")
