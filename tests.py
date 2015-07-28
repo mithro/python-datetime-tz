@@ -311,11 +311,14 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
       if filename in (
           "/usr/share/zoneinfo/posix/Australia/Melbourne",
           "/usr/share/zoneinfo/posix/Australia/Sydney",
+          "/usr/share/zoneinfo/posix\\Australia\\Melbourne",
+          "/usr/share/zoneinfo/posix\\Australia\\Sydney",
           ):
         filename = test_zonedata_sydney
 
       if filename in (
           "/usr/share/zoneinfo/posix/Etc/UTC",
+          "/usr/share/zoneinfo/posix\\Etc\\UTC",
           ):
         filename = os.path.join(os.path.dirname(__file__),
                                 "test_zonedata_utc")
