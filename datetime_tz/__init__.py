@@ -346,6 +346,8 @@ class _default_tzinfos(object):
 
   For more details, please see:
   http://labix.org/python-dateutil#head-c0e81a473b647dfa787dc11e8c69557ec2c3ecd2
+  Usage example:
+    dateutil.parser.parse("Thu Sep 25 10:36:28 UTC 2003", tzinfos=datetime_tz._default_tzinfos())
   """
 
   _marker = None
