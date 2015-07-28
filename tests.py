@@ -469,6 +469,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
           return {"South Africa Standard Time": "AUS Eastern Standard Time"}
 
     self.mocked("detect_windows.win32timezone", _win32timezone_mock)
+    detect_windows.win32timezone_to_en = {}
     self.assertTimezoneEqual(
         detect_windows._detect_timezone_windows(),
         pytz.timezone("Australia/Sydney"))
