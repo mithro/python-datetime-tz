@@ -46,9 +46,13 @@ import dateutil.parser
 import dateutil.relativedelta
 import dateutil.tz
 import pytz
+import sys
 
 
 from . import pytz_abbr  # pylint: disable=g-bad-import-order
+
+if sys.platform == "win32":
+  from .detect_windows import _detect_timezone_windows
 
 try:
   basestring
@@ -56,11 +60,10 @@ except NameError:
   # pylint: disable=redefined-builtin
   basestring = str
 
-
 try:
   # pylint: disable=g-import-not-at-top
   import functools
-except ImportError:
+except ImportError as e:
 
   class functools(object):
     """Fake replacement for a full functools."""
@@ -103,6 +106,28 @@ def _tzinfome(tzinfo):
 # Our "local" timezone
 _localtz = None
 
+def localize(dt, force_to_local=True):
+  """Localize a datetime to the local timezone
+
+  If dt is naive, returns the same datetime with the local timezone
+  Else, uses astimezone to convert"""
+  if not isinstance(dt, datetime_tz):
+    if not dt.tzinfo:
+      return datetime_tz(dt, tzinfo=localtz())
+    dt = datetime_tz(dt)
+  if force_to_local:
+    return dt.astimezone(localtz())
+  return dt
+
+def get_naive(dt):
+  """Gets a naive datetime from a datetime.
+
+  datetime_tz objects can't just have tzinfo replaced with None - you need to call asdatetime"""
+  if not dt.tzinfo:
+    return dt
+  if hasattr(dt, "asdatetime"):
+    return dt.asdatetime()
+  return dt.replace(tzinfo=None)
 
 def localtz():
   """Get the local timezone.
@@ -116,6 +141,9 @@ def localtz():
     _localtz = detect_timezone()
   return _localtz
 
+def localtz_name():
+  """Returns the name of the local timezone"""
+  return str(localtz())
 
 def localtz_set(timezone):
   """Set the local timezone."""
@@ -123,12 +151,18 @@ def localtz_set(timezone):
   global _localtz
   _localtz = _tzinfome(timezone)
 
+def require_timezone(zone):
+  """Raises an AssertionError if we are not in the correct timezone"""
+  assert localtz().zone == zone,\
+      "Please set your local timezone to %(zone)s (either in the machine,\
+      or on Linux by exporting TZ=%(zone)s" % {"zone": zone}
 
 def detect_timezone():
   """Try and detect the timezone that Python is currently running in.
 
   We have a bunch of different methods for trying to figure this out (listed in
   order they are attempted).
+    * In windows, use win32timezone.TimeZoneInfo.local()
     * Try TZ environment variable.
     * Try and find /etc/timezone file (with timezone name).
     * Try and find /etc/localtime file (with timezone data).
@@ -140,6 +174,11 @@ def detect_timezone():
   Raises:
     pytz.UnknownTimeZoneError: If it was unable to detect a timezone.
   """
+  if sys.platform == "win32":
+    tz = _detect_timezone_windows()
+    if tz is not None:
+      return tz
+
   # First we try the TZ variable
   tz = _detect_timezone_environ()
   if tz is not None:
@@ -190,7 +229,6 @@ def _detect_timezone_etc_timezone():
     # Problem reading the /etc/timezone file
     except IOError as eo:
       warnings.warn("Could not access your /etc/timezone file: %s" % eo)
-
 
 def _load_local_tzinfo():
   tzdir = os.environ.get("TZDIR", "/usr/share/zoneinfo/posix")
@@ -299,7 +337,40 @@ def _detect_timezone_php():
   if len(matches) > 1:
     warnings.warn("We detected multiple matches for the timezone, choosing "
                   "the first %s. (Matches where %s)" % (matches[0], matches))
+  if matches:
     return pytz.timezone(matches[0])
+
+
+class _default_tzinfos(object):
+  """Change tzinfos argument in dateutil.parser.parse() to use pytz.timezone.
+
+  For more details, please see:
+  http://labix.org/python-dateutil#head-c0e81a473b647dfa787dc11e8c69557ec2c3ecd2
+  Usage example:
+    dateutil.parser.parse("Thu Sep 25 10:36:28 UTC 2003", tzinfos=datetime_tz._default_tzinfos())
+  """
+
+  _marker = object()
+
+  def __getitem__(self, key, default=_marker):
+    try:
+      return pytz.timezone(key)
+    except KeyError:
+      if default is self._marker:
+        raise KeyError(key)
+      return default
+
+  get = __getitem__
+
+  def has_key(self, key):
+    return key in pytz.all_timezones
+
+  def __iter__(self):
+    for i in pytz.all_timezones:
+      yield i
+
+  def keys(self):
+    return pytz.all_timezones
 
 
 class datetime_tz(datetime.datetime):
@@ -365,6 +436,14 @@ class datetime_tz(datetime.datetime):
     obj.is_dst = obj.dst() != datetime.timedelta(0)
     return obj
 
+  def __copy__(self):
+    return type(self)(self)
+
+  def __deepcopy__(self, memo):
+    dpcpy = type(self)(self)
+    memo[id(self)] = dpcpy
+    return dpcpy
+
   def asdatetime(self, naive=True):
     """Return this datetime_tz as a datetime object.
 
@@ -413,7 +492,7 @@ class datetime_tz(datetime.datetime):
     tzinfo = _tzinfome(tzinfo)
 
     d = self.asdatetime(naive=False).astimezone(tzinfo)
-    return datetime_tz(d)
+    return type(self)(d)
 
   # pylint: disable=g-doc-args
   def replace(self, **kw):
@@ -436,6 +515,11 @@ class datetime_tz(datetime.datetime):
     if "tzinfo" in kw:
       if kw["tzinfo"] is None:
         raise TypeError("Can not remove the timezone use asdatetime()")
+      else:
+        tzinfo = kw['tzinfo']
+        del kw['tzinfo']
+    else:
+      tzinfo = None
 
     is_dst = None
     if "is_dst" in kw:
@@ -447,7 +531,7 @@ class datetime_tz(datetime.datetime):
 
     replaced = self.asdatetime().replace(**kw)
 
-    return datetime_tz(replaced, tzinfo=self.tzinfo.zone, is_dst=is_dst)
+    return type(self)(replaced, tzinfo=tzinfo or self.tzinfo.zone, is_dst=is_dst)
 
   # pylint: disable=line-to-long
   @classmethod
@@ -517,7 +601,8 @@ class datetime_tz(datetime.datetime):
     elif toparselower == "yesterday":
       dt -= datetime.timedelta(days=1)
 
-    elif toparselower == "tomorrow":
+    elif toparselower in ("tomorrow", "tommorrow"):
+      # tommorrow is spelled wrong, but code out there might be depending on it working
       dt += datetime.timedelta(days=1)
 
     elif "ago" in toparselower:
@@ -615,7 +700,7 @@ class datetime_tz(datetime.datetime):
     """date, time, [tz] -> datetime with same date and time fields."""
     if tzinfo is None:
       tzinfo = localtz()
-    return datetime_tz(datetime.datetime.combine(date, time), tzinfo)
+    return cls(datetime.datetime.combine(date, time), tzinfo)
 
   today = now
 
@@ -625,13 +710,11 @@ class datetime_tz(datetime.datetime):
     raise SyntaxError("Not enough information to create a datetime_tz object "
                       "from an ordinal. Please use datetime.date.fromordinal")
 
-
 # We can't use datetime's absolute min/max otherwise astimezone will fail.
 datetime_tz.min = datetime_tz(
     datetime.datetime.min+datetime.timedelta(days=2), pytz.utc)
 datetime_tz.max = datetime_tz(
     datetime.datetime.max-datetime.timedelta(days=2), pytz.utc)
-
 
 class iterate(object):
   """Helpful iterators for working with datetime_tz objects."""
@@ -749,11 +832,11 @@ def _wrap_method(name):
 
   # Have to give the second argument as method has no __module__ option.
   @functools.wraps(method, ("__name__", "__doc__"), ())
-  def wrapper(*args, **kw):
-    r = method(*args, **kw)
+  def wrapper(self, *args, **kw):
+    r = method(self, *args, **kw)
 
-    if isinstance(r, datetime.datetime) and not isinstance(r, datetime_tz):
-      r = datetime_tz(r)
+    if isinstance(r, datetime.datetime) and not isinstance(r, type(self)):
+      r = type(self)(r)
     return r
 
   setattr(datetime_tz, name, wrapper)
@@ -762,12 +845,13 @@ for methodname in ["__add__", "__radd__", "__rsub__", "__sub__"]:
 
   # Make sure we have not already got an override for this method
   assert methodname not in datetime_tz.__dict__
-
-  _wrap_method(methodname)
-
+  # pypy 1.5.0 lacks __rsub__
+  if hasattr(datetime.datetime, methodname):
+    _wrap_method(methodname)
 
 __all__ = [
     "datetime_tz", "detect_timezone", "iterate", "localtz",
     "localtz_set", "timedelta", "_detect_timezone_environ",
     "_detect_timezone_etc_localtime", "_detect_timezone_etc_timezone",
-    "_detect_timezone_php"]
+    "_detect_timezone_php", 'localize', 'get_naive', 'localtz_name', 'require_timezone']
+

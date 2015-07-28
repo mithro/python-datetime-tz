@@ -17,10 +17,28 @@
 # limitations under the License.
 #
 
+import os
+
 try:
     from setuptools import setup
+    from setuptools.command import sdist, install
 except ImportError:
     from distutils.core import setup
+    from distutils.command import sdist, install
+
+from datetime_tz import update_win32tz_map
+
+class update_sdist(sdist.sdist):
+    def run(self):
+        update_win32tz_map.update_stored_win32tz_map()
+        sdist.sdist.run(self)
+
+class update_install(install.install):
+    def run(self):
+        if not os.path.exists(os.path.join(os.path.dirname(__file__), "datetime_tz", "win32tz_map.py")):
+            # Running an install from a non-sdist, so need to generate map
+            update_win32tz_map.update_stored_win32tz_map()
+        install.install.run(self)
 
 import sys
 
@@ -43,8 +61,10 @@ A drop in replacement for Python's datetime module which cares deeply about time
     ],
     packages=['datetime_tz'],
     install_requires=[],
+    setup_requires=["Genshi"],
     py_modules=['datetime_tz','datetime_tz.pytz_abbr'],
     test_suite='tests',
+    cmdclass={'sdist': update_sdist, "install": update_install},
 )
 
 if sys.version[:3] < '3.0':
