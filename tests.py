@@ -58,7 +58,7 @@ except ImportError:
 import datetime_tz
 
 # To test these, we still import them
-from datetime_tz import detect_windows
+from datetime_tz import detect_windows, update_win32tz_map
 
 try:
   # pylint: disable=g-import-not-at-top,unused-import
@@ -1290,6 +1290,12 @@ class TestDatetimeTZ(TestTimeZoneBase):
     parsed_dt = dateutil.parser.parse("Thu Sep 25 10:36:28 UTC 2003", tzinfos=datetime_tz._default_tzinfos())
     self.assertTimezoneEqual(parsed_dt.tzinfo, pytz.UTC)
 
+  def testDefaultTzinfos(self):
+    def_tz = datetime_tz._default_tzinfos()
+    self.assertTrue('Australia/Sydney' in def_tz)
+    self.assertFalse('Made/Up' in def_tz)
+    self.assertTrue('Australia/Sydney' in def_tz.keys())
+
 class datetime_tz_test_subclass(datetime_tz.datetime_tz):
   pass
 
@@ -1379,6 +1385,29 @@ class TestIterate(unittest.TestCase):
     self.assertEqual(result, ["2008/05/12 11:45", "2008/05/13 11:45",
                               "2008/05/14 11:45", "2008/05/15 11:45"])
 
+class TestWin32MapUpdate(unittest.TestCase):
+  def setUp(self):
+    # Ignore warnings in datetime_tz as we are going to forcably generate them.
+    self.mocked = MockMe()
+
+  def tearDown(self):
+      self.mocked.tearDown()
+
+  def testRunUpdate(self):
+    def os_path_exists_fake(filename, os_path_exists=os.path.exists):
+      if filename.endswith('win32tz_map.py'):
+        return False
+      return os_path_exists(filename)
+    self.mocked("os.path.exists", os_path_exists_fake)
+
+    # Check that when /etc/timezone is a valid input
+    def write_map_fake(filename, mode="r", open=open):
+      if filename.endswith('win32tz_map.py') and mode == 'w':
+        return StringIO()
+      return open(filename, mode)
+
+    self.mocked("builtins.open", write_map_fake)
+    update_win32tz_map.update_stored_win32tz_map()
 
 if __name__ == "__main__":
   unittest.main()
