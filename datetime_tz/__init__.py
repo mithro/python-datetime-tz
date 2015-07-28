@@ -350,7 +350,7 @@ class _default_tzinfos(object):
     dateutil.parser.parse("Thu Sep 25 10:36:28 UTC 2003", tzinfos=datetime_tz._default_tzinfos())
   """
 
-  _marker = None
+  _marker = object()
 
   def __getitem__(self, key, default=_marker):
     try:
