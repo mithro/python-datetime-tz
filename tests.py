@@ -439,6 +439,15 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     else:
       self.assertTimezoneEqual(detect_windows._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
 
+    class _win32timezone_mock(object):
+      class TimeZoneInfo(object):
+        @staticmethod
+        def _get_indexed_time_zone_keys(*args, **kwargs):
+          return {"South Africa Standard Time": "AUS Eastern Standard Time"}
+
+    self.mocked("detect_windows.win32timezone", _win32timezone_mock)
+    self.assertTimezoneEqual(detect_windows._detect_timezone_windows(), pytz.timezone("Australia/Sydney"))
+
 class TestDatetimeTZ(TestTimeZoneBase):
 
   def setUp(self):
