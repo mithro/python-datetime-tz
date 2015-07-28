@@ -432,6 +432,11 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     else:
       self.assertTimezoneEqual(detect_windows._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
 
+if sys.platform != "win32":
+  os_timestamp_limits = (-100000000, -1, 0, 1, 1233300000)
+else:
+  os_timestamp_limits = (0, 1, 744018)
+
 class TestDatetimeTZ(TestTimeZoneBase):
 
   def setUp(self):
@@ -725,7 +730,7 @@ class TestDatetimeTZ(TestTimeZoneBase):
   def testUtcFromTimestamp(self):
     datetime_tz.localtz_set("US/Pacific")
 
-    for timestamp in -100000000, -1, 0, 1, 1233300000:
+    for timestamp in os_timestamp_limits:
       d = datetime_tz.datetime_tz.utcfromtimestamp(timestamp)
 
       self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
@@ -735,7 +740,7 @@ class TestDatetimeTZ(TestTimeZoneBase):
   def testFromTimestamp(self):
     datetime_tz.localtz_set("US/Pacific")
 
-    for timestamp in -100000000, -1, 0, 1, 1233300000:
+    for timestamp in os_timestamp_limits:
       d = datetime_tz.datetime_tz.fromtimestamp(timestamp)
 
       self.assertTrue(isinstance(d, datetime_tz.datetime_tz))
