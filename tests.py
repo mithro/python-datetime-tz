@@ -243,7 +243,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
 
   def testEtcTimezoneMethod(self):
     if sys.platform == "win32":
-      self.skipTest("/etc timezone method will never work on Windows")
+      raise self.skipTest("/etc timezone method will never work on Windows")
     def os_path_exists_fake(filename, os_path_exists=os.path.exists):
       if filename == "/etc/timezone":
         return True
