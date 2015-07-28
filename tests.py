@@ -32,33 +32,37 @@
 # Disable the override inbuilt, because that is exactly what we want to do.
 # pylint: disable=redefined-builtin
 
+# Disable complaints about not using datelibe.CreateDatetime
+# pylint: disable=g-tzinfo-datetime
 
 """Tests for the datetime_tz module."""
 
 __author__ = "tansell@google.com (Tim Ansell)"
 
+import copy
+import ctypes
 import datetime
 import itertools
 import os
 import random
+import sys
 import unittest
 import warnings
-import copy
-import sys
 
 import dateutil
 import dateutil.parser
 import pytz
-import ctypes
+
+import datetime_tz
+# To test these, we still import them
+from datetime_tz import detect_windows
+from datetime_tz import update_win32tz_map
+
 try:
+  # pylint: disable=g-import-not-at-top
   import win32timezone
 except ImportError:
   win32timezone = None
-
-import datetime_tz
-
-# To test these, we still import them
-from datetime_tz import detect_windows, update_win32tz_map
 
 try:
   # pylint: disable=g-import-not-at-top,unused-import
@@ -106,10 +110,11 @@ class MockMe(object):
     for tomock, tounmock in self.mocked.items():
       exec("%s = tounmock" % tomock)
 
+
 if sys.platform != "win32":
-    os_timestamp_limits = (-100000000, -1, 0, 1, 1233300000)
+  os_timestamp_limits = (-100000000, -1, 0, 1, 1233300000)
 else:
-    os_timestamp_limits = (0, 1, 744018)
+  os_timestamp_limits = (0, 1, 744018)
 
 
 class TestTimeZoneBase(unittest.TestCase):
@@ -398,55 +403,76 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
       self.assertNotEqual(detect_windows._detect_timezone_windows(), None)
 
     class kernel32_old(object):
+
       @staticmethod
       def GetTimeZoneInformation(tzi_byref):
         tzi = tzi_byref._obj
         tzi.bias = -120
         tzi.standard_name = "South Africa Standard Time"
         tzi.standard_start = detect_windows.SYSTEMTIME_c()
-        tzi.standard_start.year = tzi.standard_start.month = tzi.standard_start.day_of_week = \
-          tzi.standard_start.day = tzi.standard_start.hour = tzi.standard_start.minute = tzi.standard_start.second\
-                = tzi.standard_start.millisecond = 0
+        tzi.standard_start.year = 0
+        tzi.standard_start.month = 0
+        tzi.standard_start.day_of_week = 0
+        tzi.standard_start.day = 0
+        tzi.standard_start.hour = 0
+        tzi.standard_start.minute = 0
+        tzi.standard_start.second = 0
+        tzi.standard_start.millisecond = 0
         tzi.standard_bias = 0
-        tzi.daylight_name = 'South Africa Daylight Time'
+        tzi.daylight_name = "South Africa Daylight Time"
         tzi.daylight_bias = -60
-        tzi.daylight_start.year = tzi.daylight_start.month = tzi.daylight_start.day_of_week = \
-          tzi.daylight_start.day = tzi.daylight_start.hour = tzi.daylight_start.minute = tzi.daylight_start.second \
-          = tzi.daylight_start.millisecond = 0
+        tzi.daylight_start.year = 0
+        tzi.daylight_start.month = 0
+        tzi.daylight_start.day_of_week = 0
+        tzi.daylight_start.day = 0
+        tzi.daylight_start.hour = 0
+        tzi.daylight_start.minute = 0
+        tzi.daylight_start.second = 0
+        tzi.daylight_start.millisecond = 0
         return 0
 
     class _kernel32(kernel32_old):
+
       @staticmethod
       def GetDynamicTimeZoneInformation(tzi_byref):
         kernel32_old.GetTimeZoneInformation(tzi_byref)
         tzi = tzi_byref._obj
-        tzi.key_name = 'South Africa Standard Time'
+        tzi.key_name = "South Africa Standard Time"
         tzi.dynamic_daylight_time_disabled = False
-
 
     class windll(object):
       kernel32 = _kernel32
 
-    if hasattr(ctypes, 'windll'):
+    if hasattr(ctypes, "windll"):
       self.mocked("ctypes.windll", windll)
     else:
       ctypes.windll = windll
-    self.assertTimezoneEqual(detect_windows._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
+
+    self.assertTimezoneEqual(
+        detect_windows._detect_timezone_windows(),
+        pytz.timezone("Etc/GMT-2"))
 
     windll.kernel32 = kernel32_old
     if win32timezone is None:
       self.assertEqual(detect_windows._detect_timezone_windows(), None)
     else:
-      self.assertTimezoneEqual(detect_windows._detect_timezone_windows(), pytz.timezone("Etc/GMT-2"))
+      self.assertTimezoneEqual(
+          detect_windows._detect_timezone_windows(),
+          pytz.timezone("Etc/GMT-2"))
 
     class _win32timezone_mock(object):
+
       class TimeZoneInfo(object):
+
         @staticmethod
-        def _get_indexed_time_zone_keys(*args, **kwargs):
+        def _get_indexed_time_zone_keys(*unused_args, **unused_kwargs):
           return {"South Africa Standard Time": "AUS Eastern Standard Time"}
 
     self.mocked("detect_windows.win32timezone", _win32timezone_mock)
-    self.assertTimezoneEqual(detect_windows._detect_timezone_windows(), pytz.timezone("Australia/Sydney"))
+    self.assertTimezoneEqual(
+        detect_windows._detect_timezone_windows(),
+        pytz.timezone("Australia/Sydney"))
+
 
 class TestDatetimeTZ(TestTimeZoneBase):
 
@@ -569,7 +595,6 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertTrue(isinstance(d7, datetime_tz.datetime_tz))
     self.assertTimezoneEqual(d7.tzinfo, pytz.timezone("US/Pacific"))
     self.assertEqual(d7.tzinfo._dst, datetime.timedelta(0, 3600))
-
 
   def testBadDates(self):
     # For example, 1:30am on 27th Oct 2002 happened twice in the US/Eastern
@@ -1245,23 +1270,24 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertEqual(ldt.hour, 12)
     self.assertEqual(ldt.minute, 34)
     self.assertEqual(ldt.second, 54)
-    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Australia/Sydney'))
-    datetime_tz.localtz_set('UTC')
+    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone("Australia/Sydney"))
+    datetime_tz.localtz_set("UTC")
     ldt = datetime_tz.localize(naive_dt)
     self.assertTimezoneEqual(ldt.tzinfo, pytz.UTC)
 
     # Test joburg to sydney
-    datetime_tz.localtz_set('Australia/Sydney')
-    joburg_dt = datetime_tz.datetime_tz(2010, 7, 11, 12, 34, 54, "Africa/Johannesburg")
+    datetime_tz.localtz_set("Australia/Sydney")
+    joburg_dt = datetime_tz.datetime_tz(
+        2010, 7, 11, 12, 34, 54, "Africa/Johannesburg")
     ldt = datetime_tz.localize(joburg_dt)
-    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Australia/Sydney'))
+    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone("Australia/Sydney"))
     self.assertEqual(ldt.hour, 20)
 
     # Test aware datetime to datetime_tz
     utc_dt = datetime.datetime(2010, 7, 11, 12, 34, 54, tzinfo=pytz.utc)
     ldt = datetime_tz.localize(utc_dt)
     self.assertTrue(isinstance(ldt, datetime_tz.datetime_tz))
-    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone('Australia/Sydney'))
+    self.assertTimezoneEqual(ldt.tzinfo, pytz.timezone("Australia/Sydney"))
     self.assertEqual(ldt.hour, 22)
 
     # Test joburg not touched on no force_local
@@ -1272,77 +1298,99 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertEqual(ldt.hour, 12)
 
   def testLocalTzName(self):
-    datetime_tz.localtz_set('UTC')
-    self.assertEqual(datetime_tz.localtz_name(), 'UTC')
-    datetime_tz.localtz_set('Australia/Sydney')
-    self.assertEqual(datetime_tz.localtz_name(), 'Australia/Sydney')
+    datetime_tz.localtz_set("UTC")
+    self.assertEqual(datetime_tz.localtz_name(), "UTC")
+    datetime_tz.localtz_set("Australia/Sydney")
+    self.assertEqual(datetime_tz.localtz_name(), "Australia/Sydney")
 
   def testRequireTimezone(self):
-    datetime_tz.require_timezone('Australia/Sydney')
-    self.assertRaises(AssertionError, datetime_tz.require_timezone, 'UTC')
-    datetime_tz.localtz_set('UTC')
-    datetime_tz.require_timezone('UTC')
-    self.assertRaises(AssertionError, datetime_tz.require_timezone, 'Australia/Sydney')
-    datetime_tz.localtz_set('Australia/Sydney')
+    datetime_tz.require_timezone("Australia/Sydney")
+    self.assertRaises(
+        AssertionError, datetime_tz.require_timezone, "UTC")
+    datetime_tz.localtz_set("UTC")
+    datetime_tz.require_timezone("UTC")
+    self.assertRaises(
+        AssertionError, datetime_tz.require_timezone, "Australia/Sydney")
+    datetime_tz.localtz_set("Australia/Sydney")
 
   def testGetNaive(self):
     # Test datetime_tz, naive datetime and timezoned datetime all produce naive
     naive_dt = datetime.datetime(2015, 7, 11, 12, 34, 54)
     dtz = datetime_tz.datetime_tz(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
-    dtnz = datetime.datetime(2015, 7, 11, 12, 34, 54, tzinfo=pytz.timezone("Australia/Sydney"))
+    dtnz = datetime.datetime(
+        2015, 7, 11, 12, 34, 54, tzinfo=pytz.timezone("Australia/Sydney"))
 
     self.assertEqual(naive_dt, datetime_tz.get_naive(naive_dt))
     self.assertEqual(naive_dt, datetime_tz.get_naive(dtz))
     self.assertEqual(naive_dt, datetime_tz.get_naive(dtnz))
 
   def testDateutilParseTzinfos(self):
-    parsed_dt = dateutil.parser.parse("Thu Sep 25 10:36:28 UTC 2003", tzinfos=datetime_tz._default_tzinfos())
+    parsed_dt = dateutil.parser.parse(
+        "Thu Sep 25 10:36:28 UTC 2003",
+        tzinfos=datetime_tz._default_tzinfos())
     self.assertTimezoneEqual(parsed_dt.tzinfo, pytz.UTC)
 
   def testDefaultTzinfos(self):
     def_tz = datetime_tz._default_tzinfos()
-    self.assertTrue('Australia/Sydney' in def_tz)
-    self.assertFalse('Made/Up' in def_tz)
-    self.assertTrue('Australia/Sydney' in def_tz.keys())
-    self.assertTrue(def_tz.has_key('Australia/Sydney'))
-    self.assertRaises(KeyError, def_tz.get, 'Made/Up')
-    self.assertEquals(def_tz.get('Made/Up', None), None)
+    self.assertTrue("Australia/Sydney" in def_tz)
+    self.assertFalse("Made/Up" in def_tz)
+    self.assertTrue("Australia/Sydney" in def_tz.keys())
+    self.assertTrue(def_tz.has_key("Australia/Sydney"))
+    self.assertRaises(KeyError, def_tz.get, "Made/Up")
+    self.assertEquals(def_tz.get("Made/Up", None), None)
+
 
 class datetime_tz_test_subclass(datetime_tz.datetime_tz):
   pass
 
+
 class TestSubclass(TestTimeZoneBase):
+
   def test_copy(self):
-    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
+    dtz = datetime_tz_test_subclass(
+        2015, 7, 11, 12, 34, 54, "Australia/Sydney")
     dtz_copy = copy.copy(dtz)
-    self.assertTrue(isinstance(dtz_copy, datetime_tz_test_subclass))
+    self.assertTrue(isinstance(
+        dtz_copy, datetime_tz_test_subclass))
     self.assertEqual(dtz, dtz_copy)
 
   def test_deepcopy(self):
-    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
+    dtz = datetime_tz_test_subclass(
+        2015, 7, 11, 12, 34, 54, "Australia/Sydney")
     dtz_copy = copy.deepcopy(dtz)
-    self.assertTrue(isinstance(dtz_copy, datetime_tz_test_subclass))
+    self.assertTrue(isinstance(
+        dtz_copy, datetime_tz_test_subclass))
     self.assertEqual(dtz, dtz_copy)
 
   def test_astimezone(self):
-    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
-    self.assertTrue(isinstance(dtz.astimezone(pytz.UTC), datetime_tz_test_subclass))
+    dtz = datetime_tz_test_subclass(
+        2015, 7, 11, 12, 34, 54, "Australia/Sydney")
+    self.assertTrue(isinstance(
+        dtz.astimezone(pytz.UTC), datetime_tz_test_subclass))
 
   def test_replace(self):
-    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
-    self.assertTrue(isinstance(dtz.replace(year=2014), datetime_tz_test_subclass))
+    dtz = datetime_tz_test_subclass(
+        2015, 7, 11, 12, 34, 54, "Australia/Sydney")
+    self.assertTrue(isinstance(
+        dtz.replace(year=2014), datetime_tz_test_subclass))
 
   def test_add(self):
-    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
-    self.assertTrue(isinstance(dtz + datetime.timedelta(days=1), datetime_tz_test_subclass))
+    dtz = datetime_tz_test_subclass(
+        2015, 7, 11, 12, 34, 54, "Australia/Sydney")
+    self.assertTrue(isinstance(
+        dtz + datetime.timedelta(days=1), datetime_tz_test_subclass))
 
   def test_radd(self):
-    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
-    self.assertTrue(isinstance(datetime.timedelta(days=1) + dtz, datetime_tz_test_subclass))
+    dtz = datetime_tz_test_subclass(
+        2015, 7, 11, 12, 34, 54, "Australia/Sydney")
+    self.assertTrue(isinstance(
+        datetime.timedelta(days=1) + dtz, datetime_tz_test_subclass))
 
   def test_sub(self):
-    dtz = datetime_tz_test_subclass(2015, 7, 11, 12, 34, 54, "Australia/Sydney")
-    self.assertTrue(isinstance(dtz - datetime.timedelta(days=1), datetime_tz_test_subclass))
+    dtz = datetime_tz_test_subclass(
+        2015, 7, 11, 12, 34, 54, "Australia/Sydney")
+    self.assertTrue(isinstance(
+        dtz - datetime.timedelta(days=1), datetime_tz_test_subclass))
 
 
 class TestIterate(unittest.TestCase):
@@ -1397,24 +1445,26 @@ class TestIterate(unittest.TestCase):
     self.assertEqual(result, ["2008/05/12 11:45", "2008/05/13 11:45",
                               "2008/05/14 11:45", "2008/05/15 11:45"])
 
+
 class TestWin32MapUpdate(unittest.TestCase):
+
   def setUp(self):
     # Ignore warnings in datetime_tz as we are going to forcably generate them.
     self.mocked = MockMe()
 
   def tearDown(self):
-      self.mocked.tearDown()
+    self.mocked.tearDown()
 
   def testRunUpdate(self):
     def os_path_exists_fake(filename, os_path_exists=os.path.exists):
-      if filename.endswith('win32tz_map.py'):
+      if filename.endswith("win32tz_map.py"):
         return False
       return os_path_exists(filename)
     self.mocked("os.path.exists", os_path_exists_fake)
 
     # Check that when /etc/timezone is a valid input
     def write_map_fake(filename, mode="r", open=open):
-      if filename.endswith('win32tz_map.py') and mode == 'w':
+      if filename.endswith("win32tz_map.py") and mode == "w":
         return StringIO()
       return open(filename, mode)
 
