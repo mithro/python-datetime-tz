@@ -1295,6 +1295,9 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertTrue('Australia/Sydney' in def_tz)
     self.assertFalse('Made/Up' in def_tz)
     self.assertTrue('Australia/Sydney' in def_tz.keys())
+    self.assertTrue(def_tz.has_key('Australia/Sydney'))
+    self.assertRaises(KeyError, def_tz.get, 'Made/Up')
+    self.assertEquals(def_tz.get('Made/Up', None), None)
 
 class datetime_tz_test_subclass(datetime_tz.datetime_tz):
   pass
