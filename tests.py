@@ -242,6 +242,8 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     self.assertEqual(None, tzinfo)
 
   def testEtcTimezoneMethod(self):
+    if sys.platform == "win32":
+      self.skipTest("/etc timezone method will never work on Windows")
     def os_path_exists_fake(filename, os_path_exists=os.path.exists):
       if filename == "/etc/timezone":
         return True
@@ -316,14 +318,11 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
       if filename in (
           "/usr/share/zoneinfo/posix/Australia/Melbourne",
           "/usr/share/zoneinfo/posix/Australia/Sydney",
-          "/usr/share/zoneinfo/posix\\Australia\\Melbourne",
-          "/usr/share/zoneinfo/posix\\Australia\\Sydney",
           ):
         filename = test_zonedata_sydney
 
       if filename in (
           "/usr/share/zoneinfo/posix/Etc/UTC",
-          "/usr/share/zoneinfo/posix\\Etc\\UTC",
           ):
         filename = os.path.join(os.path.dirname(__file__),
                                 "test_zonedata_utc")
