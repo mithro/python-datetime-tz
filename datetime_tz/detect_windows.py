@@ -9,6 +9,11 @@ try:
 except ImportError:
     warnings.warn("win32tz_map is not generated yet - hopefully this only happens in a build")
 
+try:
+    import win32timezone
+except ImportError:
+    win32timezone = None
+
 # The following code is a workaround to
 # GetDynamicTimeZoneInformation not being present in win32timezone
 
@@ -65,9 +70,7 @@ def _detect_timezone_windows():
 
     win32tz_key_name = tzi.key_name
     if not win32tz_key_name:
-        try:
-            import win32timezone
-        except ImportError:
+        if win32timezone is None:
             return None
         # we're on Windows before Vista/Server 2008 - need to look up the standard_name in the registry
         # This will not work in some multilingual setups if running in a language
