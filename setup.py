@@ -44,7 +44,7 @@ import sys
 
 data = dict(
     name='python-datetime-tz',
-    version='0.3',
+    version='0.4',
     author='Tim Ansell',
     author_email='mithro@mithis.com',
     url='http://github.com/mithro/python-datetime-tz',
