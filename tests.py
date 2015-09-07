@@ -458,7 +458,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     else:
       self.assertTimezoneEqual(
           detect_windows._detect_timezone_windows(),
-          pytz.timezone("Etc/GMT-2"))
+          pytz.timezone("Africa/Johannesburg"))
 
     class _win32timezone_mock(object):
 
