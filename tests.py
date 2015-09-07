@@ -403,12 +403,13 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
       self.assertNotEqual(detect_windows._detect_timezone_windows(), None)
 
     class kernel32_old(object):
+      STANDARD_NAME = "South Africa Standard Time"
 
-      @staticmethod
-      def GetTimeZoneInformation(tzi_byref):
+      @classmethod
+      def GetTimeZoneInformation(cls, tzi_byref):
         tzi = tzi_byref._obj
         tzi.bias = -120
-        tzi.standard_name = "South Africa Standard Time"
+        tzi.standard_name = cls.STANDARD_NAME
         tzi.standard_start = detect_windows.SYSTEMTIME_c()
         tzi.standard_start.year = 0
         tzi.standard_start.month = 0
@@ -473,7 +474,8 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     self.assertTimezoneEqual(
         detect_windows._detect_timezone_windows(),
         pytz.timezone("Australia/Sydney"))
-
+    kernel32_old.STANDARD_NAME = "DoesNotExist"
+    self.assertEqual(detect_windows._detect_timezone_windows(), None)
 
 class TestDatetimeTZ(TestTimeZoneBase):
 
