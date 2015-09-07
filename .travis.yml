@@ -2,14 +2,32 @@ language: python
 python:
   - 2.6
   - 2.7
+  - 3.3
+  - 3.4
+  - nightly
+
+matrix:
+ allow_failures:
+   - python: nightly
+
+sudo: false
+
+cache:
+  pip: true
+  directories:
+   - ~/.cache/pip
 
 install:
-  - pip install -r requirements.txt --use-mirrors
-  - pip install coveralls --use-mirrors
+  - pip install --upgrade pip
+  - pip install pyopenssl ndg-httpsclient pyasn1
+  - pip install -r requirements.txt
   - python setup.py install
+  - python run_tests_all_pytz.py --download-only
 
 script:
-  - coverage run --source=datetime_tz setup.py test
+  - python run_tests_all_pytz.py
 
 after_success:
+  - pip install coveralls
+  - coverage run --source=datetime_tz setup.py test
   - coveralls

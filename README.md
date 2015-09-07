@@ -17,8 +17,11 @@ This module depends on:
  * pytz - For providing the Timezone database.
  * dateutil - For providing parsing of many common formats.
 
+For development:
+ * PyLint - Needed for checking for link.
+ * Genshi - Needed for building windows mapping file.
+
 [![Build Status](https://travis-ci.org/mithro/python-datetime-tz.png?branch=master)](https://travis-ci.org/mithro/python-datetime-tz)
 [![Coverage Status](https://coveralls.io/repos/mithro/python-datetime-tz/badge.png)](https://coveralls.io/r/mithro/python-datetime-tz)
 [![PyPi Version](https://pypip.in/v/python-datetime-tz/badge.png)](https://crate.io/packages/python-coveralls/)
 [![PyPi Downloads](https://pypip.in/d/python-datetime-tz/badge.png)](https://crate.io/packages/python-coveralls/)
-[![githalytics.com](https://cruel-carlota.pagodabox.com/d317b586eafe043326e5050de8cc0214 "githalytics.com")](http://githalytics.com/mithro/python-datetime-tz)
