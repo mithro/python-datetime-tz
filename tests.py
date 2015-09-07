@@ -450,7 +450,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
 
     self.assertTimezoneEqual(
         detect_windows._detect_timezone_windows(),
-        pytz.timezone("Etc/GMT-2"))
+        pytz.timezone("Africa/Johannesburg"))
 
     windll.kernel32 = kernel32_old
     if win32timezone is None:
