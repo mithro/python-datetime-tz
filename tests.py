@@ -403,12 +403,13 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
       self.assertNotEqual(detect_windows._detect_timezone_windows(), None)
 
     class kernel32_old(object):
+      STANDARD_NAME = "South Africa Standard Time"
 
-      @staticmethod
-      def GetTimeZoneInformation(tzi_byref):
+      @classmethod
+      def GetTimeZoneInformation(cls, tzi_byref):
         tzi = tzi_byref._obj
         tzi.bias = -120
-        tzi.standard_name = "South Africa Standard Time"
+        tzi.standard_name = cls.STANDARD_NAME
         tzi.standard_start = detect_windows.SYSTEMTIME_c()
         tzi.standard_start.year = 0
         tzi.standard_start.month = 0
@@ -450,7 +451,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
 
     self.assertTimezoneEqual(
         detect_windows._detect_timezone_windows(),
-        pytz.timezone("Etc/GMT-2"))
+        pytz.timezone("Africa/Johannesburg"))
 
     windll.kernel32 = kernel32_old
     if win32timezone is None:
@@ -458,7 +459,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     else:
       self.assertTimezoneEqual(
           detect_windows._detect_timezone_windows(),
-          pytz.timezone("Etc/GMT-2"))
+          pytz.timezone("Africa/Johannesburg"))
 
     class _win32timezone_mock(object):
 
@@ -469,10 +470,12 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
           return {"South Africa Standard Time": "AUS Eastern Standard Time"}
 
     self.mocked("detect_windows.win32timezone", _win32timezone_mock)
+    detect_windows.win32timezone_to_en = {}
     self.assertTimezoneEqual(
         detect_windows._detect_timezone_windows(),
         pytz.timezone("Australia/Sydney"))
-
+    kernel32_old.STANDARD_NAME = "DoesNotExist"
+    self.assertEqual(detect_windows._detect_timezone_windows(), None)
 
 class TestDatetimeTZ(TestTimeZoneBase):
 

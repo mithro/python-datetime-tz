@@ -65,6 +65,7 @@ def create_win32tz_map(windows_zones_xml):
   """
   coming_comment = None
   win32_name = None
+  territory = None
   parser = genshi.input.XMLParser(StringIO(windows_zones_xml))
   map_zones = {}
   zone_comments = {}
@@ -72,13 +73,13 @@ def create_win32tz_map(windows_zones_xml):
   for kind, data, _ in parser:
     if kind == genshi.core.START and str(data[0]) == "mapZone":
       attrs = data[1]
-      win32_name, olson_name = (
-          attrs.get("other"), attrs.get("type").split(" ")[0])
+      win32_name, territory, olson_name = (
+          attrs.get("other"), attrs.get("territory"), attrs.get("type").split(" ")[0])
 
-      map_zones[win32_name] = olson_name
+      map_zones[(win32_name, territory)] = olson_name
     elif kind == genshi.core.END and str(data) == "mapZone" and win32_name:
       if coming_comment:
-        zone_comments[win32_name] = coming_comment
+        zone_comments[(win32_name, territory)] = coming_comment
         coming_comment = None
       win32_name = None
     elif kind == genshi.core.COMMENT:
@@ -86,9 +87,9 @@ def create_win32tz_map(windows_zones_xml):
     elif kind in (genshi.core.START, genshi.core.END, genshi.core.COMMENT):
       coming_comment = None
 
-  for win32_name in sorted(map_zones):
-    yield (win32_name, map_zones[win32_name],
-           zone_comments.get(win32_name, None))
+  for win32_name, territory in sorted(map_zones):
+    yield (win32_name, territory, map_zones[(win32_name, territory)],
+           zone_comments.get((win32_name, territory), None))
 
 
 def update_stored_win32tz_map():
@@ -120,9 +121,13 @@ def update_stored_win32tz_map():
       source_hash))
 
   map_file.write("win32timezones = {\n")
-  for win32_name, olson_name, comment in map_zones:
-    map_file.write("  %r: %r, # %s\n" % (
-        win32_name, olson_name, comment or ""))
+  for win32_name, territory, olson_name, comment in map_zones:
+    if territory == '001':
+      map_file.write("  %r: %r, # %s\n" % (
+          str(win32_name), str(olson_name), comment or ""))
+    else:
+      map_file.write("  %r: %r, # %s\n" % (
+          (str(win32_name), str(territory)), str(olson_name), comment or ""))
   map_file.write("}\n")
 
   map_file.close()

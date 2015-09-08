@@ -23,6 +23,7 @@ __author__ = "davidm"
 
 import ctypes
 import warnings
+import locale
 
 import pytz
 
@@ -115,7 +116,8 @@ def _detect_timezone_windows():
           win32timezone.TimeZoneInfo._get_indexed_time_zone_keys("Std"))
     win32tz_key_name = win32timezone_to_en.get(win32tz_name, win32tz_name)
 
-  olson_name = win32tz_map.win32timezones.get(win32tz_key_name, None)
+  territory = locale.getdefaultlocale()[0].split("_", 1)[1]
+  olson_name = win32tz_map.win32timezones.get((win32tz_key_name, territory), win32tz_map.win32timezones.get(win32tz_key_name, None))
   if not olson_name:
     return None
   if not isinstance(olson_name, str):
