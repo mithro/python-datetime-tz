@@ -4,3 +4,7 @@ dist
 *.py[co]
 docs/_*
 datetime_tz/win32tz_map.py
+py2
+py3
+venv
+venv3
