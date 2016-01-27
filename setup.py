@@ -26,10 +26,9 @@ except ImportError:
     from distutils.core import setup
     from distutils.command import sdist, install
 
-from datetime_tz import update_win32tz_map
-
 class update_sdist(sdist.sdist):
     def run(self):
+        from datetime_tz import update_win32tz_map
         update_win32tz_map.update_stored_win32tz_map()
         sdist.sdist.run(self)
 
@@ -37,6 +36,7 @@ class update_install(install.install):
     def run(self):
         if not os.path.exists(os.path.join(os.path.dirname(__file__), "datetime_tz", "win32tz_map.py")):
             # Running an install from a non-sdist, so need to generate map
+            from datetime_tz import update_win32tz_map
             update_win32tz_map.update_stored_win32tz_map()
         install.install.run(self)
 
@@ -61,17 +61,21 @@ A drop in replacement for Python's datetime module which cares deeply about time
     ],
     packages=['datetime_tz'],
     install_requires=[],
-    setup_requires=["Genshi"],
+    setup_requires=['Genshi'],
     py_modules=['datetime_tz','datetime_tz.pytz_abbr'],
     test_suite='tests',
     cmdclass={'sdist': update_sdist, "install": update_install},
 )
 
+deps = []
 if sys.version[:3] < '3.0':
-    data['install_requires'].append('pytz >= 2007g')
-    data['install_requires'].append('python-dateutil >= 1.4')
+    deps += ['pytz >= 2007g']
+    deps += ['python-dateutil >= 1.4']
 else:
-    data['install_requires'].append('pytz >= 2011g')
-    data['install_requires'].append('python-dateutil >= 2.0')
+    deps += ['pytz >= 2011g']
+    deps += ['python-dateutil >= 2.0']
+
+data['install_requires'] += deps
+data['setup_requires'] += deps
 
 setup(**data)
