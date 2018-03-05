@@ -23,5 +23,5 @@ For development:
 
 [![Build Status](https://travis-ci.org/mithro/python-datetime-tz.png?branch=master)](https://travis-ci.org/mithro/python-datetime-tz)
 [![Coverage Status](https://coveralls.io/repos/mithro/python-datetime-tz/badge.png)](https://coveralls.io/r/mithro/python-datetime-tz)
-[![PyPi Version](https://pypip.in/v/python-datetime-tz/badge.png)](https://crate.io/packages/python-coveralls/)
-[![PyPi Downloads](https://pypip.in/d/python-datetime-tz/badge.png)](https://crate.io/packages/python-coveralls/)
+[![PyPi Version](https://img.shields.io/pypi/v/python-datetime-tz.svg)](https://crate.io/packages/python-coveralls/)
+[![PyPi Downloads](https://img.shields.io/pypi/dm/python-datetime-tz.svg)](https://crate.io/packages/python-coveralls/)
