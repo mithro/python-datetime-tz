@@ -5,7 +5,6 @@ dist
 .tox
 docs/_*
 datetime_tz/win32tz_map.py
-py2
-py3
+release_venv
 venv
 venv3
