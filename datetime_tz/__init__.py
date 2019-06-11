@@ -691,7 +691,7 @@ class datetime_tz(datetime.datetime):
         if isinstance(dt.tzinfo, pytz_abbr.tzabbr):
           abbr = dt.tzinfo
           dt = dt.replace(tzinfo=None)
-          dt = cls(dt, abbr.zone, is_dst=abbr.dst)
+          dt = cls(dt, abbr.zone, is_dst=abbr.is_dst)
 
         dt = cls(dt)
 
