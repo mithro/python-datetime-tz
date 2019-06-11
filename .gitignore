@@ -2,6 +2,7 @@ build
 dist
 *.egg*
 *.py[co]
+.tox
 docs/_*
 datetime_tz/win32tz_map.py
 py2

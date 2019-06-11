@@ -47,6 +47,12 @@ import datetime
 import pytz
 import pytz.tzfile
 
+try:
+  basestring
+except NameError:
+  # pylint: disable=redefined-builtin
+  basestring = str
+
 
 class tzabbr(datetime.tzinfo):
   """A timezone abbreviation.
@@ -58,11 +64,13 @@ class tzabbr(datetime.tzinfo):
   """
 
   def __init__(self, abbr, name, region, zone, dst):
+    super(tzabbr, self).__init__()
+
     self.abbr = abbr
     self.name = name
     self.region = region
 
-    if not isinstance(zone, pytz.tzinfo.BaseTzInfo):
+    if isinstance(zone, basestring):
       zone = pytz.timezone(zone)
 
     self.zone = zone
