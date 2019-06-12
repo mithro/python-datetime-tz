@@ -26,6 +26,7 @@ install:
   - pip install --upgrade tox
 
 script:
+  - ./test_multiple_pytz_versions.sh
   - tox -e py
 
 after_success:
