@@ -334,6 +334,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
         filename = os.path.join(os.path.dirname(__file__),
                                 "test_zonedata_utc")
       return real_open(filename, *args, **kw)
+    self.mocked("builtins.open", localtime_valid_fake)
 
     self.assertEqual(
         ["Australia/Melbourne", "Australia/Sydney", "Etc/UTC"],
