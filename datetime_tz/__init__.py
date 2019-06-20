@@ -217,7 +217,7 @@ def detect_timezone():
   if tz is not None:
     return tz
 
-  # Next we try and use a similiar method to what PHP does.
+  # Next we try and use a similar method to what PHP does.
   # We first try to search on time.tzname, time.timezone, time.daylight to
   # match a pytz zone.
   warnings.warn("Had to fall back to worst detection method (the 'PHP' "
