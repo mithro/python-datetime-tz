@@ -254,30 +254,31 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     self.mocked("os.path.exists", os_path_exists_fake)
 
     # Check that when /etc/timezone is a valid input
-    def timezone_valid_fake(filename, mode="r", open=open):
+    real_open = builtins.open
+    def timezone_valid_fake(filename, *args, **kw):
       if filename == "/etc/timezone":
         return StringIO("Australia/Sydney")
-      return open(filename, mode)
+      return real_open(filename, *args, **kw)
 
     self.mocked("builtins.open", timezone_valid_fake)
     tzinfo = datetime_tz._detect_timezone_etc_timezone()
     self.assertTimezoneEqual(tzinfo, pytz.timezone("Australia/Sydney"))
 
     # Check that when /etc/timezone is invalid timezone
-    def timezone_invalid_fake(filename, mode="r", open=open):
+    def timezone_invalid_fake(filename, *args, **kw):
       if filename == "/etc/timezone":
         return StringIO("Invalid-Timezone")
-      return open(filename, mode)
+      return real_open(filename, *args, **kw)
 
     self.mocked("builtins.open", timezone_invalid_fake)
     tzinfo = datetime_tz._detect_timezone_etc_timezone()
     self.assertEqual(None, tzinfo)
 
     # Check that when /etc/timezone is random "binary" data
-    def timezone_binary_fake(filename, mode="r", open=open):
+    def timezone_binary_fake(filename, *args, **kw):
       if filename == "/etc/timezone":
         return StringIO("\0\r\n\t\0\r\r\n\0")
-      return open(filename, mode)
+      return real_open(filename, *args, **kw)
 
     self.mocked("builtins.open", timezone_binary_fake)
     tzinfo = datetime_tz._detect_timezone_etc_timezone()
@@ -316,7 +317,8 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
       return os_walk(dirname, *args, **kw)
     self.mocked("os.walk", os_walk_fake)
 
-    def localtime_valid_fake(filename, mode="r", open=open):
+    real_open = builtins.open
+    def localtime_valid_fake(filename, *args, **kw):
       if filename == "/etc/localtime":
         filename = os.path.join(os.path.dirname(__file__),
                                 localtime_file)
@@ -331,7 +333,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
           ):
         filename = os.path.join(os.path.dirname(__file__),
                                 "test_zonedata_utc")
-      return open(filename, mode)
+      return real_open(filename, *args, **kw)
     self.mocked("builtins.open", localtime_valid_fake)
 
     self.assertEqual(
@@ -1340,7 +1342,7 @@ class TestDatetimeTZ(TestTimeZoneBase):
     self.assertTrue("Australia/Sydney" in def_tz.keys())
     self.assertTrue(def_tz.has_key("Australia/Sydney"))
     self.assertRaises(KeyError, def_tz.get, "Made/Up")
-    self.assertEquals(def_tz.get("Made/Up", None), None)
+    self.assertEqual(def_tz.get("Made/Up", None), None)
 
 
 class datetime_tz_test_subclass(datetime_tz.datetime_tz):

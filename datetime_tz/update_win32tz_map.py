@@ -46,7 +46,7 @@ except ImportError:
   win32tz_map = None
 
 
-_CLDR_WINZONES_URL = "http://www.unicode.org/repos/cldr/trunk/common/supplemental/windowsZones.xml"  # pylint: disable=line-too-long
+_CLDR_WINZONES_URL = "https://github.com/unicode-org/cldr/raw/master/common/supplemental/windowsZones.xml" # pylint: disable=line-too-long
 
 
 def download_cldr_win32tz_map_xml():

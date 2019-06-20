@@ -116,7 +116,12 @@ def _detect_timezone_windows():
           win32timezone.TimeZoneInfo._get_indexed_time_zone_keys("Std"))
     win32tz_key_name = win32timezone_to_en.get(win32tz_name, win32tz_name)
 
-  territory = locale.getdefaultlocale()[0].split("_", 1)[1]
+  language_code = locale.getdefaultlocale()[0]
+  if language_code is None:
+    # Failure getting the system locale, result may be wrong!
+    territory = None
+  else:
+    territory = language_code.split("_", 1)[1]
   olson_name = win32tz_map.win32timezones.get((win32tz_key_name, territory), win32tz_map.win32timezones.get(win32tz_key_name, None))
   if not olson_name:
     return None

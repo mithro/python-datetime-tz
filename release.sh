@@ -1,33 +1,15 @@
-#!/bin/bash
-
-rm -rf py2
-virtualenv-2.7 py2
+#!/bin/bash -e
+rm -rf release_env
+rm -rf dist/
+python3 -m virtualenv release_env
+source release_env/bin/activate
 (
-  . py2/bin/activate
-  pip install --upgrade pip
-  pip install --upgrade setuptools
-  pip install -r requirements.txt
-  pip install wheel
-  python setup.py clean
-  python setup.py sdist
-  python setup.py bdist_wheel
-  python setup.py sdist upload
-  python setup.py bdist_wheel upload
-  #PS1="py2setup # " bash --norc
-)
+pip install -U pip
+pip install -U twine
+pip install -U pep517
+# Run the build
+python -m pep517.build . -b -s
 
-rm -rf py3
-virtualenv-3.4 py3
-(
-  . py3/bin/activate
-  pip install --upgrade pip
-  pip install --upgrade setuptools
-  pip install wheel
-  pip install -r requirements.txt
-  python setup.py clean
-  python setup.py sdist
-  python setup.py bdist_wheel
-  python setup.py sdist upload
-  python setup.py bdist_wheel upload
-  #PS1="py3setup # " bash --norc
+# Upload the files with twine
+twine upload dist/*
 )
