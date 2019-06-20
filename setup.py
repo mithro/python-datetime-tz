@@ -43,7 +43,7 @@ class update_install(install.install):
 
 data = dict(
     name='python-datetime-tz',
-    version='0.5.3',
+    version='0.5.4',
     author='Tim Ansell',
     author_email='mithro@mithis.com',
     url='http://github.com/mithro/python-datetime-tz',
