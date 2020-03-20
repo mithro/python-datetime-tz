@@ -47,19 +47,63 @@ import datetime
 import pytz
 import pytz.tzfile
 
+try:
+  basestring
+except NameError:
+  # pylint: disable=redefined-builtin
+  basestring = str
+
 
 class tzabbr(datetime.tzinfo):
   """A timezone abbreviation.
 
-  *WARNING*: This is not a tzinfo implementation! Trying to use this as tzinfo
-  object will result in failure.  We inherit from datetime.tzinfo so we can get
-  through the dateutil checks.
+  *WARNING*: This is a proxy object for an underlying `pytz` object only
+  intended to allow dateutil to probe the localized datetime for information.
+  datetime_tz's parsing logic will replace it with the relevant pytz zone
+  before returning to the end user.
   """
-  pass
+
+  def __init__(self, abbr, name, region, zone, dst):
+    super(tzabbr, self).__init__()
+
+    self.abbr = abbr
+    self.name = name
+    self.region = region
+
+    if isinstance(zone, basestring):
+      zone = pytz.timezone(zone)
+
+    self.zone = zone
+    self.is_dst = dst
+
+  def _get_localized(self, dt):
+    # To make this a fully-functioning pass-through to the underlying pytz
+    # zone, we would want to use `fold` to set `is_dst`, but since this is
+    # only a temporary proxy for the zone, we will fix the DST status
+    return self.zone.localize(dt.replace(tzinfo=None), is_dst=self.is_dst)
+
+  def tzname(self, dt):
+    return self._get_localized(dt).tzname()
+
+  def utcoffset(self, dt):
+    return self._get_localized(dt).utcoffset() # pragma: no cover
+
+  def dst(self, dt):
+    return self._get_localized(dt).dst() # pragma: no cover
 
 
 # A "marker" tzinfo object which is used to signify an unknown timezone.
-unknown = datetime.tzinfo()
+class _UnknownZone(datetime.tzinfo):
+  def tzname(self, dt):
+    return "UNK"
+
+  def dst(self, dt):
+    return None
+
+  def utcoffset(self, dt):
+    return datetime.timedelta(0)  # pragma: no cover
+
+unknown = _UnknownZone()
 
 
 regions = {"all": {}, "military": {}}
@@ -74,12 +118,7 @@ def tzabbr_register(abbr, name, region, zone, dst):
   If another abbreviation with the same name has already been registered it new
   abbreviation will only be registered in region specific dictionary.
   """
-  newabbr = tzabbr()
-  newabbr.abbr = abbr
-  newabbr.name = name
-  newabbr.region = region
-  newabbr.zone = zone
-  newabbr.dst = dst
+  newabbr = tzabbr(abbr, name, region, zone, dst)
 
   if abbr not in all:
     all[abbr] = newabbr

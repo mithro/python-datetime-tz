@@ -2,5 +2,10 @@ build
 dist
 *.egg*
 *.py[co]
+.tox
+.coverage
 docs/_*
 datetime_tz/win32tz_map.py
+release_venv
+venv
+venv3

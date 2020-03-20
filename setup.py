@@ -18,18 +18,17 @@
 #
 
 import os
+import sys
 
-try:
-    from setuptools import setup
-    from setuptools.command import sdist, install
-except ImportError:
-    from distutils.core import setup
-    from distutils.command import sdist, install
+from setuptools import setup
+from setuptools.command import sdist, install
 
-from datetime_tz import update_win32tz_map
+# Required in order to import datetime_tz in PEP 517 builds
+sys.path.append(os.path.dirname(__file__))
 
 class update_sdist(sdist.sdist):
     def run(self):
+        from datetime_tz import update_win32tz_map
         update_win32tz_map.update_stored_win32tz_map()
         sdist.sdist.run(self)
 
@@ -37,14 +36,14 @@ class update_install(install.install):
     def run(self):
         if not os.path.exists(os.path.join(os.path.dirname(__file__), "datetime_tz", "win32tz_map.py")):
             # Running an install from a non-sdist, so need to generate map
+            from datetime_tz import update_win32tz_map
             update_win32tz_map.update_stored_win32tz_map()
         install.install.run(self)
 
-import sys
 
 data = dict(
     name='python-datetime-tz',
-    version='0.5.1',
+    version='0.5.4',
     author='Tim Ansell',
     author_email='mithro@mithis.com',
     url='http://github.com/mithro/python-datetime-tz',
@@ -60,18 +59,11 @@ A drop in replacement for Python's datetime module which cares deeply about time
         "Topic :: Software Development :: Internationalization",
     ],
     packages=['datetime_tz'],
-    install_requires=[],
-    setup_requires=["Genshi"],
+    install_requires=["pytz >= 2011g", "python-dateutil >= 2.0"],
     py_modules=['datetime_tz','datetime_tz.pytz_abbr'],
     test_suite='tests',
     cmdclass={'sdist': update_sdist, "install": update_install},
 )
 
-if sys.version[:3] < '3.0':
-    data['install_requires'].append('pytz >= 2007g')
-    data['install_requires'].append('python-dateutil >= 1.4')
-else:
-    data['install_requires'].append('pytz >= 2011g')
-    data['install_requires'].append('python-dateutil >= 2.0')
 
 setup(**data)
