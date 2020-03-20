@@ -866,7 +866,7 @@ def _wrap_method(name):
   # Have to give the second argument as method has no __module__ option.
   @functools.wraps(method, ("__name__", "__doc__"), ())
   def wrapper(self, *args, **kw):
-    r = method(self, *args, **kw)
+    r = method(self.asdatetime(naive=False), *args, **kw)
 
     if isinstance(r, datetime.datetime) and not isinstance(r, type(self)):
       r = type(self)(r)
