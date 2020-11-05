@@ -19,7 +19,7 @@ This module depends on:
 
 For development:
  * PyLint - Needed for checking for link.
- * Genshi - Needed for building windows mapping file.
+ * defusedxml - Needed for building windows mapping file.
 
 [![Build Status](https://travis-ci.org/mithro/python-datetime-tz.png?branch=master)](https://travis-ci.org/mithro/python-datetime-tz)
 [![Coverage Status](https://coveralls.io/repos/mithro/python-datetime-tz/badge.png)](https://coveralls.io/r/mithro/python-datetime-tz)

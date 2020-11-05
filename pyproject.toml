@@ -2,7 +2,7 @@
 requires = [
     "setuptools>=41.0",
     "wheel",
-    "Genshi",
+    "defusedxml",
     "python-dateutil>=2.0",
     "pytz >= 2011g",
 ]

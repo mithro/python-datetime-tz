@@ -23,15 +23,7 @@
 import hashlib
 import os
 
-try:
-  import urllib.request as urllib2
-except ImportError:
-  import urllib2
-
-try:
-  from io import StringIO
-except ImportError:
-  from StringIO import StringIO
+from defusedxml import ElementTree
 
 try:
   # pylint: disable=redefined-builtin
@@ -39,12 +31,15 @@ try:
 except ImportError:
   pass
 
-import genshi.input
 try:
   from datetime_tz import win32tz_map
 except ImportError:
   win32tz_map = None
 
+try:
+  import urllib.request as urllib2
+except ImportError:
+  import urllib2
 
 _CLDR_WINZONES_URL = "https://github.com/unicode-org/cldr/raw/master/common/supplemental/windowsZones.xml" # pylint: disable=line-too-long
 
@@ -61,44 +56,33 @@ def create_win32tz_map(windows_zones_xml):
     windows_zones_xml: The CLDR XML mapping.
 
   Yields:
-    (win32_name, olson_name, comment)
+    For "default" territory (001): (win32_name, olson_name)
+    Where territory is set: ((win32_name, territory), olson_name)
   """
-  coming_comment = None
-  win32_name = None
-  territory = None
-  parser = genshi.input.XMLParser(StringIO(windows_zones_xml))
-  map_zones = {}
-  zone_comments = {}
+  parser = ElementTree.fromstring(windows_zones_xml)
+  map_timezones = parser.find("windowsZones").find("mapTimezones")
 
-  for kind, data, _ in parser:
-    if kind == genshi.core.START and str(data[0]) == "mapZone":
-      attrs = data[1]
-      win32_name, territory, olson_name = (
-          attrs.get("other"), attrs.get("territory"), attrs.get("type").split(" ")[0])
+  for child in map_timezones:
+    if child.tag == "mapZone":
+      win32_name = str(child.attrib.get("other", ""))
+      territory = str(child.attrib.get("territory", ""))
+      # Some `type` parameters are have multiple values, separated by spaces
+      # eg: "America/Denver America/Boise"
+      olson_name = str(child.attrib.get("type", "")).split(" ")[0]
 
-      map_zones[(win32_name, territory)] = olson_name
-    elif kind == genshi.core.END and str(data) == "mapZone" and win32_name:
-      if coming_comment:
-        zone_comments[(win32_name, territory)] = coming_comment
-        coming_comment = None
-      win32_name = None
-    elif kind == genshi.core.COMMENT:
-      coming_comment = data.strip()
-    elif kind in (genshi.core.START, genshi.core.END, genshi.core.COMMENT):
-      coming_comment = None
+      if not win32_name or not olson_name:
+        continue
 
-  for win32_name, territory in sorted(map_zones):
-    yield (win32_name, territory, map_zones[(win32_name, territory)],
-           zone_comments.get((win32_name, territory), None))
+      if territory == "001" or not territory:
+        yield (win32_name, olson_name)
+      else:
+        yield ((win32_name, territory), olson_name)
 
 
 def update_stored_win32tz_map():
   """Downloads the cldr win32 timezone map and stores it in win32tz_map.py."""
   windows_zones_xml = download_cldr_win32tz_map_xml()
   source_hash = hashlib.md5(windows_zones_xml).hexdigest()
-
-  if hasattr(windows_zones_xml, "decode"):
-    windows_zones_xml = windows_zones_xml.decode("utf-8")
 
   map_zones = create_win32tz_map(windows_zones_xml)
   map_dir = os.path.dirname(os.path.abspath(__file__))
@@ -110,24 +94,16 @@ def update_stored_win32tz_map():
       return False
 
   map_file = open(map_filename, "w")
+  map_file.write((
+      "'''Map between Windows and Olson timezones taken from {0}\n"
+      "Generated automatically by {1}'''\n"
+      "source_hash = {2!r}  # md5 sum of xml source data\n"
+      "win32timezones = {{\n"
+    ).format(_CLDR_WINZONES_URL, __file__, source_hash))
 
-  comment = "Map between Windows and Olson timezones taken from %s" % (
-      _CLDR_WINZONES_URL,)
-  comment2 = "Generated automatically from datetime_tz.py"
-  map_file.write("'''%s\n" % comment)
-  map_file.write("%s'''\n" % comment2)
+  for z in map_zones:
+    map_file.write("  %r: %r,\n" % z)
 
-  map_file.write("source_hash = '%s' # md5 sum of xml source data\n" % (
-      source_hash))
-
-  map_file.write("win32timezones = {\n")
-  for win32_name, territory, olson_name, comment in map_zones:
-    if territory == '001':
-      map_file.write("  %r: %r, # %s\n" % (
-          str(win32_name), str(olson_name), comment or ""))
-    else:
-      map_file.write("  %r: %r, # %s\n" % (
-          (str(win32_name), str(territory)), str(olson_name), comment or ""))
   map_file.write("}\n")
 
   map_file.close()

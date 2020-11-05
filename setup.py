@@ -59,7 +59,11 @@ A drop in replacement for Python's datetime module which cares deeply about time
         "Topic :: Software Development :: Internationalization",
     ],
     packages=['datetime_tz'],
-    install_requires=["pytz >= 2011g", "python-dateutil >= 2.0"],
+    install_requires=[
+        "defusedxml",
+        "python-dateutil >= 2.0",
+        "pytz >= 2011g",
+    ],
     py_modules=['datetime_tz','datetime_tz.pytz_abbr'],
     test_suite='tests',
     cmdclass={'sdist': update_sdist, "install": update_install},
