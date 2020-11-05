@@ -2,14 +2,12 @@ language: python
 python:
   - 2.7
   - 3.6
+  - 3.7
+  - 3.8
   - nightly
+dist: xenial
 
 matrix:
- include:
-   # Required to run Python 3.7
-   - python: 3.7
-     dist: xenial
-     sudo: required
  allow_failures:
    - python: nightly
 
