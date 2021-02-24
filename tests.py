@@ -86,6 +86,10 @@ except NameError:
 
 FMT = "%Y-%m-%d %H:%M:%S %Z%z"
 
+if sys.platform == "darwin":
+  TZDIR_POSIX = "/usr/share/zoneinfo"
+else:
+  TZDIR_POSIX = "/usr/share/zoneinfo/posix"
 
 # Older versions of pytz only have AmbiguousTimeError, while newer versions
 # throw NonExistentTimeError.
@@ -307,7 +311,7 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
     os_walk = os.walk
     def os_walk_fake(dirname, *args, **kw):
       if dirname in (
-          "/usr/share/zoneinfo/posix",
+          TZDIR_POSIX,
           ):
         return [
             (dirname, ["Etc", "Australia"], []),
@@ -323,13 +327,13 @@ class TestLocalTimezoneDetection(TestTimeZoneBase):
         filename = os.path.join(os.path.dirname(__file__),
                                 localtime_file)
       if filename in (
-          "/usr/share/zoneinfo/posix/Australia/Melbourne",
-          "/usr/share/zoneinfo/posix/Australia/Sydney",
+          os.path.join(TZDIR_POSIX, "Australia/Melbourne"),
+          os.path.join(TZDIR_POSIX, "Australia/Sydney"),
           ):
         filename = test_zonedata_sydney
 
       if filename in (
-          "/usr/share/zoneinfo/posix/Etc/UTC",
+          os.path.join(TZDIR_POSIX, "Etc/UTC"),
           ):
         filename = os.path.join(os.path.dirname(__file__),
                                 "test_zonedata_utc")
