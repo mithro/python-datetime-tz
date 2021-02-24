@@ -41,6 +41,7 @@ import os
 import os.path
 import re
 import sys
+import struct
 import time
 import warnings
 import dateutil.parser
@@ -256,7 +257,11 @@ def _detect_timezone_etc_timezone():
 
 def _load_local_tzinfo():
   """Load zoneinfo from local disk."""
-  tzdir = os.environ.get("TZDIR", "/usr/share/zoneinfo/posix")
+  if os.path.exists("/usr/share/zoneinfo/posix"):
+    _tzdir = "/usr/share/zoneinfo/posix"
+  else:
+    _tzdir = "/usr/share/zoneinfo"
+  tzdir = os.environ.get("TZDIR", _tzdir)
 
   localtzdata = {}
   for dirpath, _, filenames in os.walk(tzdir):
@@ -264,9 +269,11 @@ def _load_local_tzinfo():
       filepath = os.path.join(dirpath, filename)
       name = os.path.relpath(filepath, tzdir)
 
-      f = open(filepath, "rb")
-      tzinfo = pytz.tzfile.build_tzinfo(name, f)
-      f.close()
+      with open(filepath, "rb") as f:
+        try:
+          tzinfo = pytz.tzfile.build_tzinfo(name, f)
+        except (AssertionError, struct.error):
+          continue
       localtzdata[name] = tzinfo
 
   return localtzdata
@@ -276,9 +283,8 @@ def _detect_timezone_etc_localtime():
   """Detect timezone based on /etc/localtime file."""
   matches = []
   if os.path.exists("/etc/localtime"):
-    f = open("/etc/localtime", "rb")
-    localtime = pytz.tzfile.build_tzinfo("/etc/localtime", f)
-    f.close()
+    with open("/etc/localtime", "rb") as f:
+      localtime = pytz.tzfile.build_tzinfo("/etc/localtime", f)
 
     # We want to match against the local database because /etc/localtime will
     # be copied from that. Once we have found a name for /etc/localtime, we can
