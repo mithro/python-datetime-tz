@@ -99,7 +99,7 @@ def update_stored_win32tz_map():
       "Generated automatically by {1}'''\n"
       "source_hash = {2!r}  # md5 sum of xml source data\n"
       "win32timezones = {{\n"
-    ).format(_CLDR_WINZONES_URL, __file__, source_hash))
+    ).format(_CLDR_WINZONES_URL, os.path.basename(__file__), source_hash))
 
   for z in map_zones:
     map_file.write("  %r: %r,\n" % z)
